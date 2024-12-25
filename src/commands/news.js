@@ -19,7 +19,7 @@ async function run({interaction}) {
 
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/news`
+      `${config.ipAddress}:${config.port}/api/news`
     );
     const newsList = response.data.berita;
 
@@ -67,7 +67,7 @@ async function handleSelect(interaction) {
 
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/news/detail/${selectedId}`
+      `${config.ipAddress}:${config.port}/api/news/detail/${selectedId}`
     );
       const newsDetail = response.data.data;
 

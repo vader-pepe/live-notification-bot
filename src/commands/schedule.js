@@ -39,7 +39,7 @@ function getNickname(name) {
 async function run({interaction}) {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/schedule`
+      `${config.ipAddress}:${config.port}/api/schedule`
     );
     const schedules = response.data;
 
