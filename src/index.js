@@ -26,8 +26,8 @@ app.get("/", (req, res) => {
   });
 });
 
-app.listen(config.port, () => {
-  console.log(`Server is running at http://localhost:${config.port}`);
+app.listen(config.port, config.ipAddress, () => {
+  console.log(`Server is running at ${config.ipAddress}:${config.port}`);
 });
 
 antiCrash

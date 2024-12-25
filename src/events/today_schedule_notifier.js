@@ -41,7 +41,7 @@ function getNickname(name) {
 async function fetchShowSchedule() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/schedule`
+      `${config.ipAddress}:${config.port}/api/schedule`
     );
     return response.data;
   } catch (error) {
@@ -53,7 +53,7 @@ async function fetchShowSchedule() {
 async function fetchEventSchedule() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/schedule/section`
+      `${config.ipAddress}:${config.port}/api/schedule/section`
     );
     return response.data;
   } catch (error) {
@@ -115,7 +115,7 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
       const eventDescription = event.events
         .map(
           (e) =>
-            `- [${e.eventName}](http://localhost:${config.port}${e.eventUrl})`
+            `- [${e.eventName}](${config.ipAddress}:${config.port}${e.eventUrl})`
         )
         .join("\n");
       embed.addFields({

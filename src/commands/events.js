@@ -10,7 +10,7 @@ async function run({interaction}) {
   try {
     // Fetch data from the API
     const response = await axios.get(
-      `http://localhost:${config.port}/api/schedule/section`
+      `${config.ipAddress}:${config.port}/api/schedule/section`
     );
     const eventSections = response.data;
 
