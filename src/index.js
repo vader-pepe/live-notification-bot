@@ -132,7 +132,7 @@ antiCrash
 
       updatePresence();
 
-      const userId = "332071910328500225";
+      const userId = process.env.OWNER_ID;
       schedule.scheduleJob("0 */6 * * *", () => {
         backupDatabase(userId);
       });

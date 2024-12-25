@@ -6,7 +6,7 @@ const {
 } = require("discord.js");
 const db = require("../db");
 
-const OWNER_ID = "332071910328500225"; // Ganti dengan user ID Anda
+const OWNER_ID = process.env.OWNER_ID; // Ganti dengan user ID Anda
 
 const data = new SlashCommandBuilder()
   .setName("announce")
