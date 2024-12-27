@@ -9,7 +9,7 @@ const data = new SlashCommandBuilder()
 async function run({interaction}) {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/birthdays`
+      `${config.ipAddress}:${config.port}/api/birthdays`
     );
     const birthdays = response.data;
 

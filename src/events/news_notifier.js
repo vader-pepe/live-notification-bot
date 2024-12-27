@@ -25,7 +25,7 @@ app.use(limiter);
 async function fetchNews() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/news`
+      `${config.ipAddress}:${config.port}/api/news`
     );
     return response.data.berita;
   } catch (error) {
@@ -62,7 +62,7 @@ async function sendNewsNotifications(client) {
 
         if (news[0].berita_id !== lastNewsId) {
           const newsDetailResponse = await axios.get(
-            `http://localhost:${config.port}/api/news/detail/${news[0].berita_id}`
+            `${config.ipAddress}:${config.port}/api/news/detail/${news[0].berita_id}`
           );
           const newsDetail = newsDetailResponse.data.data;
           const avatar =

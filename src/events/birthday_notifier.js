@@ -36,7 +36,7 @@ fs.readFile("src/member.json", "utf8", (err, data) => {
 async function fetchBirthdays() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/birthdays`
+      `${config.ipAddress}:${config.port}/api/birthdays`
     );
     return response.data;
   } catch (error) {
