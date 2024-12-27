@@ -2,7 +2,7 @@ const axios = require("axios");
 const cheerio = require("cheerio");
 
 const fetchData = async () => {
-  const url = "https://takagi.sousou-no-frieren.workers.dev/theater/schedule";
+  const url = "https://jkt48.com/theater/schedule";
   const result = await axios.get(url);
   return result.data;
 };

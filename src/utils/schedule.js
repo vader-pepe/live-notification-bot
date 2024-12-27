@@ -4,7 +4,7 @@ const cheerio = require("cheerio");
 
 const fetchSpecificData = async () => {
   const url =
-    "https://takagi.sousou-no-frieren.workers.dev/calendar/list?lang=id";
+    "https://jkt48.com/calendar/list?lang=id";
 
   try {
     const response = await axios.get(url);

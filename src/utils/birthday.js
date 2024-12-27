@@ -4,7 +4,7 @@ const cheerio = require("cheerio");
 const fetchBirthdayData = async () => {
   try {
     const response = await axios.get(
-      "https://takagi.sousou-no-frieren.workers.dev/"
+      "https://jkt48.com/"
     );
     return response.data;
   } catch (error) {

@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 
 const fetchMemberData = async () => {
   const url =
-    "https://takagi.sousou-no-frieren.workers.dev/member/list?lang=id";
+    "https://jkt48.com/member/list?lang=id";
 
   try {
     const response = await axios.get(url);

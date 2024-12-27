@@ -22,7 +22,7 @@ const mapMonthNumberToAbbreviation = (monthNumber) => {
 };
 
 const fetchScheduleSectionData = async () => {
-  const url = "https://takagi.sousou-no-frieren.workers.dev/";
+  const url = "https://jkt48.com/";
 
   try {
     const response = await axios.get(url);
