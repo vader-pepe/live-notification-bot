@@ -77,11 +77,28 @@ const monthNames = [
   "Des",
 ];
 
+function getTimeOfDay(hour) {
+  if (hour >= 0 && hour < 7) {
+    return "Subuh";
+  } else if (hour >= 7 && hour < 10) {
+    return "Pagi";
+  } else if (hour >= 10 && hour < 15) {
+    return "Siang";
+  } else if (hour >= 15 && hour < 18) {
+    return "Sore";
+  } else {
+    return "Malam";
+  }
+}
+
 function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
-  const title = `Hari ini ada ${totalShows} show dan ${totalEvents} event!`;
+  const waktu = getTimeOfDay(new Date().getHours());
+  const title =
+    totalEvents === 0
+      ? `Selamat ${waktu}.. Hari ini ada ${totalShows} show!`
+      : `Selamat ${waktu}.. Hari ini ada ${totalShows} show dan ${totalEvents} event!`;
   const embed = new EmbedBuilder().setTitle(title).setColor("#ff0000");
 
-  // Add show schedules to embed description
   if (showSchedules.length > 0) {
     let showDescriptions = "**Jadwal Show:**\n";
     showSchedules.forEach((schedule) => {
@@ -109,7 +126,6 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
     embed.setDescription(showDescriptions);
   }
 
-  // Add events to embed fields
   if (events.length > 0) {
     events.forEach((event) => {
       const eventDescription = event.events
@@ -145,7 +161,6 @@ async function sendTodayCombinedNotifications(client) {
     today.getMonth() + 1
   }.${today.getFullYear()}`;
 
-  // Filter today's shows
   const todayShows = showSchedules.filter((schedule) => {
     const scheduleDate = schedule.showInfo
       .split(", ")[1]
@@ -154,7 +169,6 @@ async function sendTodayCombinedNotifications(client) {
     return scheduleDate === todayString;
   });
 
-  // Filter today's events
   const todayEvents = eventSchedules.filter(
     (event) =>
       event.tanggal === today.getDate().toString() &&
@@ -173,7 +187,6 @@ async function sendTodayCombinedNotifications(client) {
     todayEvents.length
   );
 
-  // Fetch schedule_id channels
   db.all(
     `SELECT guild_id, channel_id FROM schedule_id`,
     async (err, scheduleRows) => {
@@ -187,7 +200,6 @@ async function sendTodayCombinedNotifications(client) {
         return;
       }
 
-      // Send notifications to schedule_id channels
       const handledGuilds = new Set();
 
       for (const { guild_id, channel_id } of scheduleRows) {
@@ -204,7 +216,6 @@ async function sendTodayCombinedNotifications(client) {
         }
       }
 
-      // Fetch and send to whitelist channels for guilds not in schedule_id
       db.all("SELECT channel_id FROM whitelist", (err, whitelistRows) => {
         if (err) {
           console.error("Error retrieving whitelist channels:", err);
