@@ -25,7 +25,7 @@ async function run({interaction, client}) {
       name: "JKT48 Live Notification",
       iconURL: client.user.displayAvatarURL(),
     })
-    .setFooter({text: "JKT48 Live Notification | Created by _ryuu48"});
+    .setFooter({text: "JKT48 Live Notification | Created by RyuuG"});
 
   const initialButton = new ActionRowBuilder().addComponents(
     new ButtonBuilder()

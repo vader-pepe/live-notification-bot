@@ -25,13 +25,13 @@ async function run({interaction}) {
       .setColor("#ff0000");
 
     birthdays.forEach((member) => {
-      const birthYear = member.birthday.split(" ").pop(); // Ambil tahun dari birthday
+      const birthYear = member.birthday.split(" ").pop();
       const currentYear = new Date().getFullYear();
-      const age = currentYear - birthYear; // Hitung umur
+      const age = currentYear - birthYear; 
 
       embed.addFields({
         name: member.name,
-        value: `📅 **${member.birthday}**\n🎂 Ulang tahun ke-${age}\n🔗 [Profile Member](https://jkt48.com${member.profileLink})\n`, // Perbaiki penempatan age
+        value: `📅 **${member.birthday}**\n🎂 Ulang tahun ke-${age}\n🔗 [Profile Member](https://jkt48.com${member.profileLink})\n`,
         inline: false,
       });
     });

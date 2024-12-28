@@ -6,7 +6,7 @@ const {
 } = require("discord.js");
 const db = require("../db");
 
-const OWNER_ID = process.env.OWNER_ID; // Ganti dengan user ID Anda
+const OWNER_ID = process.env.OWNER_ID; 
 
 const data = new SlashCommandBuilder()
   .setName("announce")
@@ -19,7 +19,6 @@ const data = new SlashCommandBuilder()
   );
 
 async function run({interaction, client}) {
-  // Memeriksa apakah user yang memanggil command adalah owner
   if (interaction.user.id !== OWNER_ID) {
     return interaction.reply({
       content: "Anda tidak memiliki izin untuk menggunakan perintah ini.",
@@ -29,14 +28,12 @@ async function run({interaction, client}) {
 
   const announcementMessage = interaction.options.getString("message");
 
-  // Membuat embed untuk pengumuman
   const embed = new EmbedBuilder()
     .setTitle("Pengumuman")
     .setDescription(announcementMessage)
     .setColor("#00ff00")
     .setFooter({text: "JKT48 Live Notification"});
 
-  // Mengambil daftar channel yang terwhitelist dari database
   await interaction.deferReply({ephemeral: true});
 
   db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {

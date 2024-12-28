@@ -68,26 +68,78 @@ async function sendFiveMinuteNotifications(client) {
   });
 
   if (upcomingShows.length === 0) {
-    console.log("Tidak ada jadwal show yang akan dimulai dalam 5 menit.");
     return;
   }
 
+  function getTimeOfDay(hour) {
+    if (hour >= 0 && hour < 7) {
+      return "Subuh";
+    } else if (hour >= 7 && hour < 10) {
+      return "Pagi";
+    } else if (hour >= 10 && hour < 15) {
+      return "Siang";
+    } else if (hour >= 15 && hour < 18) {
+      return "Sore";
+    } else {
+      return "Malam";
+    }
+  }
+
+  const waktu = getTimeOfDay(new Date().getHours());
+
   const embed = new EmbedBuilder()
-    .setTitle("Pengingat: Show akan dimulai dalam 5 menit!")
+    .setTitle(
+      `Selamat ${waktu}.. Sudah siapkah kalian menonton show hari ini? Show akan dimulai dalam 5 menit!`
+    )
     .setColor("#ff0000");
+
+  let showDescriptions = "";
 
   upcomingShows.forEach((schedule) => {
     const memberNicknames = schedule.members
       .map(getNickname)
       .filter((nickname) => nickname)
       .join(", ");
+
+    const birthdayMembers = schedule.members
+      .map((member) => {
+        const memberData = membersData.find((m) => m.name === member);
+        return memberData && memberData.birthday ? memberData.name : null;
+      })
+      .filter((b) => b)
+      .join(", ");
+
+    const time = schedule.showInfo.split("Show")[1].trim();
+    const day = formattedNow.split(".")[0];
+    const monthIndex = parseInt(formattedNow.split(".")[1], 10) - 1;
+    const year = formattedNow.split(".")[2];
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agt",
+      "Sept",
+      "Okt",
+      "Nov",
+      "Des",
+    ];
+    const monthName = monthNames[monthIndex];
+
     embed.addFields({
       name: schedule.setlist,
-      value: `🕒 ${schedule.showInfo
-        .split("Show")[1]
-        .trim()}\n👥 ${memberNicknames}`,
+      value:
+        `🕒 ${time}\n🗓️ ${day} ${monthName} ${year}` +
+        (birthdayMembers ? `\n🎂 ${birthdayMembers}` : "") +
+        (memberNicknames ? `\n👥 ${memberNicknames}` : ""),
     });
   });
+
+  embed.setDescription(showDescriptions || "**Jadwal Show**");
+  embed.setFooter("Jadwal dan Event JKT48 | JKT48 Live Notification");
 
   db.all(
     `SELECT guild_id, channel_id FROM schedule_id`,
