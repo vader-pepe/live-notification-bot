@@ -177,15 +177,15 @@ function createEndLiveEmbed(user) {
     .setColor("#ff0000")
     .setImage(user.image_url)
     .setAuthor({
-      name: `${user.name.split(" ")[0]} Baru Saja Selesai Live IDN!`,
+      name: `${user.name.split(" ")[0].trim()} Baru Saja Selesai Live IDN!`,
       iconURL: user.avatar,
     })
     .setDescription(
       `Live IDN **${replacedName.split(" JKT48")}** telah berakhir.`
     )
     .addFields(
-      {name: "Start Live", value: user.startLive, inline: true},
-      {name: "End Live", value: endLive, inline: true}
+      { name: "Start Live", value: user.startLive, inline: true },
+      { name: "End Live", value: endLive, inline: true }
     )
     .setFooter({
       text: `IDNLive JKT48 | JKT48 Live Notification`,
