@@ -77,6 +77,16 @@ const monthNames = [
   "Des",
 ];
 
+const dayNames = [
+  "Minggu",
+  "Senin",
+  "Selasa",
+  "Rabu",
+  "Kamis",
+  "Jumat",
+  "Sabtu",
+];
+
 function getTimeOfDay(hour) {
   if (hour >= 0 && hour < 7) {
     return "Subuh";
@@ -113,7 +123,9 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
       const timePart = showInfoParts[1] ? showInfoParts[1].trim() : "TBD";
 
       const dateParts = datePart.split(", ")[1].split(".");
-      const formattedDate = `${parseInt(dateParts[0], 10)} ${
+      const formattedDate = `${
+        dayNames[new Date(scheduleDate).getDay()]
+      } ${parseInt(dateParts[0], 10)} ${
         monthNames[parseInt(dateParts[1], 10) - 1]
       } ${dateParts[2]}`;
 
@@ -132,20 +144,25 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
     embed.setDescription(showDescriptions);
   }
 
-    if (events.length > 0) {
-      events.forEach((event) => {
-        const eventDescription = event.events
-          .map(
-            (e) =>
-              `**${e.eventName}**\n🗓️ ${event.tanggal}, ${event.bulan} ${event.hari}\n🔗 Detail: Klik disini (http://jkt48.com${e.eventUrl})`
-          )
-          .join("\n");
-        embed.addFields({
-          name: `Event pada ${event.tanggal} ${event.bulan} (${event.hari})`,
-          value: eventDescription,
-        });
+  if (events.length > 0) {
+    events.forEach((event) => {
+      const eventDescription = event.events
+        .map((e) => {
+          const date = new Date();
+          const dateEvent = event.tanggal;
+          const dayName = event.hari;
+          const monthName = event.bulan;
+          const year = date.getFullYear();
+
+          return `**${e.eventName}**\n🗓️ ${dayName}, ${dateEvent} ${monthName} ${year}\n🔗 Detail: [Klik disini](http://jkt48.com${e.eventUrl})`;
+        })
+        .join("\n\n");
+      embed.addFields({
+        name: `Event pada hari ini!`,
+        value: eventDescription,
       });
-    }
+    });
+  }
 
   embed.setFooter({ text: "Jadwal dan Event JKT48 | JKT48 Live Notification" });
   return embed;
