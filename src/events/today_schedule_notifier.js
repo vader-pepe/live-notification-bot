@@ -93,10 +93,16 @@ function getTimeOfDay(hour) {
 
 function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
   const waktu = getTimeOfDay(new Date().getHours());
+
   const title =
-    totalEvents === 0
+    totalShows === 0 && totalEvents > 0
+      ? `Selamat ${waktu}.. Hari ini ada ${totalEvents} event!`
+      : totalEvents === 0 && totalShows > 0
       ? `Selamat ${waktu}.. Hari ini ada ${totalShows} show!`
+      : totalEvents === 0 && totalShows === 0
+      ? `Selamat ${waktu}.. Tidak ada show atau event hari ini.`
       : `Selamat ${waktu}.. Hari ini ada ${totalShows} show dan ${totalEvents} event!`;
+
   const embed = new EmbedBuilder().setTitle(title).setColor("#ff0000");
 
   if (showSchedules.length > 0) {
@@ -129,10 +135,7 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
   if (events.length > 0) {
     events.forEach((event) => {
       const eventDescription = event.events
-        .map(
-          (e) =>
-            `- [${e.eventName}](${config.ipAddress}:${config.port}${e.eventUrl})`
-        )
+        .map((e) => `- [${e.eventName}](http://jkt48.com${e.eventUrl})`)
         .join("\n");
       embed.addFields({
         name: `Event pada ${event.tanggal} ${event.bulan} (${event.hari})`,
@@ -169,22 +172,28 @@ async function sendTodayCombinedNotifications(client) {
     return scheduleDate === todayString;
   });
 
-  const todayEvents = eventSchedules.filter(
+  const filteredTodayEvents = eventSchedules.filter(
     (event) =>
       event.tanggal === today.getDate().toString() &&
       event.bulan === monthNames[today.getMonth()]
   );
 
-  if (todayShows.length === 0 && todayEvents.length === 0) {
+  const totalShows = todayShows.length;
+  const totalEvents = filteredTodayEvents.reduce(
+    (acc, event) => acc + event.events.length,
+    0
+  );
+
+  if (totalShows === 0 && totalEvents === 0) {
     console.log("Tidak ada jadwal show atau event hari ini.");
     return;
   }
 
   const embed = createCombinedEmbed(
     todayShows,
-    todayEvents,
-    todayShows.length,
-    todayEvents.length
+    filteredTodayEvents,
+    totalShows,
+    totalEvents
   );
 
   db.all(
