@@ -132,17 +132,20 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
     embed.setDescription(showDescriptions);
   }
 
-  if (events.length > 0) {
-    events.forEach((event) => {
-      const eventDescription = event.events
-        .map((e) => `- [${e.eventName}](http://jkt48.com${e.eventUrl})`)
-        .join("\n");
-      embed.addFields({
-        name: `Event pada ${event.tanggal} ${event.bulan} (${event.hari})`,
-        value: eventDescription,
+    if (events.length > 0) {
+      events.forEach((event) => {
+        const eventDescription = event.events
+          .map(
+            (e) =>
+              `**${e.eventName}**\n🗓️ ${event.tanggal}, ${event.bulan} ${event.hari}\n🔗 Detail: Klik disini (http://jkt48.com${e.eventUrl})`
+          )
+          .join("\n");
+        embed.addFields({
+          name: `Event pada ${event.tanggal} ${event.bulan} (${event.hari})`,
+          value: eventDescription,
+        });
       });
-    });
-  }
+    }
 
   embed.setFooter({ text: "Jadwal dan Event JKT48 | JKT48 Live Notification" });
   return embed;
