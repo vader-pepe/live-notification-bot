@@ -127,8 +127,8 @@ async function sendScheduleNotifications(client) {
 
     embed.setTitle(
       hasMembers
-        ? "Berikut adalah list member yang akan tampil pada show/event yang akan datang."
-        : "Berikut adalah jadwal show/event yang akan datang."
+        ? "Berikut adalah list member yang akan tampil pada show yang akan datang."
+        : "Berikut adalah jadwal show yang akan datang."
     );
   }
 

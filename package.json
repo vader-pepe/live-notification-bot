@@ -1,14 +1,13 @@
 {
   "dependencies": {
-    "axios": "^1.6.7",
-    "axios-cookiejar-support": "^5.0.0",
-    "canvas": "^2.11.2",
+    "axios": "^1.7.9",
+    "axios-cookiejar-support": "^5.0.5",
     "cheerio": "^1.0.0-rc.12",
     "commandkit": "^0.1.10",
     "cors": "^2.8.5",
-    "discord.js": "^14.15.3",
-    "express": "^4.18.2",
-    "express-rate-limit": "^7.4.0",
+    "discord.js": "^14.17.2",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
     "fs": "^0.0.1-security",
     "googleapis": "^140.0.1",
     "moment-timezone": "^0.5.45",
@@ -17,7 +16,7 @@
     "node-tweet-stream": "^2.1.0",
     "nodemon": "^3.0.2",
     "path": "^0.12.7",
-    "puppeteer": "^21.10.0",
+    "puppeteer": "^23.11.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "sqlite3": "^5.1.7",
@@ -25,5 +24,22 @@
   },
   "scripts": {
     "start": "node src/index.js"
-  }
+  },
+  "name": "live-notification-bot",
+  "version": "1.0.0",
+  "description": "JKT48 Live Notification Discord Bot",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ryuu-G/live-notification-bot.git"
+  },
+  "keywords": [
+    "jkt48"
+  ],
+  "author": "RyuuG",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ryuu-G/live-notification-bot/issues"
+  },
+  "homepage": "https://github.com/Ryuu-G/live-notification-bot#readme"
 }
