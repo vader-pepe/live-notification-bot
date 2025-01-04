@@ -6,7 +6,7 @@ const {
 const db = require("../db");
 
 const data = new SlashCommandBuilder()
-  .setName("removewhitelist")
+  .setName("unwhitelist")
   .setDescription("Menghapus whitelist channel untuk live notifications")
   .addChannelOption((option) =>
     option

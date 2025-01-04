@@ -6,7 +6,7 @@ const {
 const db = require("../db");
 
 const data = new SlashCommandBuilder()
-  .setName("remove_schedule_whitelist")
+  .setName("unwhitelist_schedule")
   .setDescription("Remove a channel from the schedule whitelist")
   .addChannelOption((option) =>
     option
