@@ -3550,6 +3550,7 @@ Require stack:
     at sendBirthdayNotifications (C:\Users\auryf\OneDrive\Documents\GitHub\live-notification-bot\src\events\birthday_notifier.js:78:36)
 2025-01-04T16:16:51.897Z - TypeError: Cannot read properties of null (reading 'filter')
     at sendBirthdayNotifications (C:\Users\auryf\OneDrive\Documents\GitHub\live-notification-bot\src\events\birthday_notifier.js:78:36)
+<<<<<<< HEAD
 2025-01-09T07:45:51.778Z - TypeError: Cannot read properties of null (reading 'filter')
     at sendBirthdayNotifications (C:\Users\Ryuu Laptop\Documents\GitHub\live-notification-bot\src\events\birthday_notifier.js:78:36)
 2025-01-09T07:46:06.784Z - TypeError: Cannot read properties of null (reading 'filter')
@@ -3693,3 +3694,5 @@ channel_id[NUMBER_TYPE_COERCE]: Value "undefined" is not snowflake.
     at sendBirthdayNotifications (C:\Users\Ryuu Laptop\Documents\GitHub\live-notification-bot\src\events\birthday_notifier.js:78:36)
 2025-01-09T08:09:14.315Z - TypeError: Cannot read properties of null (reading 'filter')
     at sendBirthdayNotifications (C:\Users\Ryuu Laptop\Documents\GitHub\live-notification-bot\src\events\birthday_notifier.js:78:36)
+=======
+>>>>>>> 0c4ad15babd069f89442c810a14cb28a2efb02eb
