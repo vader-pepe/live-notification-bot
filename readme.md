@@ -38,31 +38,6 @@ Sebelum menjalankan proyek ini, pastikan Anda memiliki:
    PORT=your_server_port
    ```
 
-4. Buat database SQLite dan tabel yang diperlukan:
-   ```sql
-   CREATE TABLE IF NOT EXISTS news (
-       id INTEGER PRIMARY KEY,
-       berita_id TEXT
-   );
-
-   CREATE TABLE IF NOT EXISTS schedules (
-       id INTEGER PRIMARY KEY,
-       setlist TEXT,
-       showInfo TEXT,
-       members TEXT
-   );
-
-   CREATE TABLE IF NOT EXISTS whitelist (
-       id INTEGER PRIMARY KEY,
-       channel_id TEXT
-   );
-
-   CREATE TABLE IF NOT EXISTS schedule_id (
-       guild_id TEXT,
-       channel_id TEXT
-   );
-   ```
-
 ## Menjalankan Proyek
 
 Untuk menjalankan bot, gunakan perintah berikut:
