@@ -39,8 +39,11 @@ function getNickname(name) {
 
 async function sendScheduleNotifications(client) {
   const whitelistedChannels = await getWhitelistedChannels();
+  const prioritizedChannels = await getPrioritizedChannels();
 
-  if (!whitelistedChannels || whitelistedChannels.length === 0) {
+  const channelsToNotify = prioritizedChannels.length > 0 ? prioritizedChannels : whitelistedChannels;
+
+  if (!channelsToNotify || channelsToNotify.length === 0) {
     console.error("No whitelisted channels found.");
     return;
   }
@@ -61,11 +64,11 @@ async function sendScheduleNotifications(client) {
   const nowYear = new Date().getFullYear();
 
   for (const schedule of schedules) {
-    const { tanggal, hari, bulan, events } = schedule;
+    const {tanggal, hari, bulan, events} = schedule;
 
     if (events.length > 0) {
       const event = events[0];
-      const { eventName } = event;
+      const {eventName, eventUrl} = event;
 
       const existsInDatabase = await checkEventExists(eventName);
       if (existsInDatabase) {
@@ -74,7 +77,7 @@ async function sendScheduleNotifications(client) {
 
       fields.push({
         name: eventName,
-        value: `${hari}, ${tanggal}/${bulan}/${nowYear}`,
+        value: `🗓️ ${hari}, ${tanggal} ${bulan} ${nowYear}\n🔗 Detail: [Klik disini](https://jkt48.com/${eventUrl})`,
         inline: false,
       });
 
@@ -88,39 +91,18 @@ async function sendScheduleNotifications(client) {
   if (hasNewSchedules) {
     embed.addFields(fields);
 
-    const roleIds = await getTagRoles();
-
-    for (const channelId of whitelistedChannels) {
+    for (const channelId of channelsToNotify) {
       try {
         const channel = await client.channels.fetch(channelId);
         if (channel) {
-          db.get(
-            `SELECT role_id FROM tag_roles WHERE guild_id = ?`,
-            [channel.guild.id],
-            async (err, row) => {
-              if (err) {
-                console.error("Database error:", err);
-                return;
-              }
-
-              let content = "";
-              if (row) {
-                content =
-                  row.role_id === "everyone"
-                    ? "@everyone"
-                    : `<@&${row.role_id}>`;
-              }
-
-              try {
-                await channel.send({embeds: [embed], content});
-              } catch (error) {
-                console.error(
-                  `Error sending to channel ${channelId}:`,
-                  error.message
-                );
-              }
-            }
-          );
+          try {
+            await channel.send({embeds: [embed]});
+          } catch (error) {
+            console.error(
+              `Error sending to channel ${channelId}:`,
+              error.message
+            );
+          }
         }
       } catch (error) {
         console.error(`Failed to fetch channel ${channelId}`, error);
@@ -138,7 +120,7 @@ async function fetchSchedules() {
     const response = await axios.get(
       `${config.ipAddress}:${config.port}/api/schedule/section`
     );
-    return response.data; // Mengembalikan data yang diterima dari API
+    return response.data;
   } catch (error) {
     console.error("Error fetching schedules:", error);
     return null;
@@ -153,18 +135,6 @@ async function getWhitelistedChannels() {
         return reject(err);
       }
       resolve(rows.map((row) => row.channel_id));
-    });
-  });
-}
-
-async function getTagRoles() {
-  return new Promise((resolve, reject) => {
-    db.all("SELECT role_id FROM tag_roles", (err, rows) => {
-      if (err) {
-        console.error("Failed to retrieve tag roles", err);
-        return reject(err);
-      }
-      resolve(rows.map((row) => row.role_id));
     });
   });
 }
@@ -194,20 +164,28 @@ async function saveEventToDatabase(eventName) {
       )`
     );
 
-    db.run(
-      `INSERT INTO events (eventName) VALUES (?)`,
-      [eventName],
-      (err) => {
-        if (err) {
-          console.error("Failed to insert new event", err);
-        } else {
-          console.log(`Event ${eventName} has been added to the database!`);
-        }
+    db.run(`INSERT INTO events (eventName) VALUES (?)`, [eventName], (err) => {
+      if (err) {
+        console.error("Failed to insert new event", err);
+      } else {
+        console.log(`Event ${eventName} has been added to the database!`);
       }
-    );
+    });
+  });
+}
+
+async function getPrioritizedChannels() {
+  return new Promise((resolve, reject) => {
+    db.all("SELECT channel_id FROM schedule_id", (err, rows) => {
+      if (err) {
+        console.error("Failed to retrieve prioritized channels", err);
+        return reject(err);
+      }
+      resolve(rows.map((row) => row.channel_id));
+    });
   });
 }
 
 module.exports = (client) => {
-  setInterval(() => sendScheduleNotifications(client), 60000);
+  setInterval(() => sendScheduleNotifications(client), 10000);
 };

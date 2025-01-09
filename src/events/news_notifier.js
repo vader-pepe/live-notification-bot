@@ -25,7 +25,7 @@ app.use(limiter);
 async function fetchNews() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/news`
+      `${config.ipAdress}:${config.port}/api/news`
     );
     return response.data.berita;
   } catch (error) {
@@ -62,13 +62,12 @@ async function sendNewsNotifications(client) {
 
         if (news[0].berita_id !== lastNewsId) {
           const newsDetailResponse = await axios.get(
-            `${config.ipAddress}:${config.port}/api/news/detail/${news[0].berita_id}`
+            `${config.ipAdress}:${config.port}/api/news/detail/${news[0].berita_id}`
           );
           const newsDetail = newsDetailResponse.data.data;
           const avatar =
             "https://res.cloudinary.com/dag7esigq/image/upload/v1731258674/Profile_Picture_BOT_epmcfl.png";
 
-          // Truncate description to avoid exceeding Discord's 4096 character limit
           const description = truncateString(newsDetail.konten, 4096);
 
           const embed = new EmbedBuilder()
@@ -89,56 +88,29 @@ async function sendNewsNotifications(client) {
 
           const buttons = new ActionRowBuilder().addComponents(newsButton);
 
-          // Ambil semua channel schedule dari semua server
-          const allScheduleChannels = await getAllScheduleChannels(); // Ambil semua channel schedule
-          const whitelistedChannels = await getWhitelistedChannels(); // Ambil channel whitelist
+          const allScheduleChannels = await getAllScheduleChannels();
+          const whitelistedChannels = await getWhitelistedChannels();
 
-          const channelIds =
-            allScheduleChannels.length > 0
-              ? allScheduleChannels
-              : whitelistedChannels;
+          const handledGuilds = new Set();
 
-          for (const channelId of channelIds) {
-            try {
-              const channel = await client.channels.fetch(channelId);
-              if (channel) {
-                db.get(
-                  `SELECT role_id FROM tag_roles WHERE guild_id = ?`,
-                  [channel.guild.id],
-                  async (err, row) => {
-                    if (err) {
-                      console.error("Database error:", err);
-                      return;
-                    }
+          for (const { guild_id, channel_id } of allScheduleChannels) {
+            const channel = await client.channels.fetch(channel_id);
+            if (channel) {
+              await channel.send({
+                embeds: [embed],
+                components: [buttons],
+              });
+              handledGuilds.add(guild_id);
+            }
+          }
 
-                    let content = "";
-                    if (row) {
-                      content =
-                        row.role_id === "everyone"
-                          ? "@everyone"
-                          : `<@&${row.role_id}>`;
-                    }
-
-                    try {
-                      await channel.send({
-                        content,
-                        embeds: [embed],
-                        components: [buttons],
-                      });
-                    } catch (error) {
-                      console.error(
-                        `Failed to send message to channel ${channelId}:`,
-                        error
-                      );
-                    }
-                  }
-                );
-              }
-            } catch (error) {
-              console.error(
-                `Failed to send message to channel ${channelId}:`,
-                error
-              );
+          for (const channelId of whitelistedChannels) {
+            const channel = await client.channels.fetch(channelId);
+            if (channel && !handledGuilds.has(channel.guild.id)) {
+              await channel.send({
+                embeds: [embed],
+                components: [buttons],
+              });
             }
           }
 
@@ -164,17 +136,17 @@ async function sendNewsNotifications(client) {
 // Fungsi untuk mendapatkan semua channel schedule dari semua server
 async function getAllScheduleChannels() {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT channel_id FROM schedule_id`, (err, rows) => {
+    db.all("SELECT guild_id, channel_id FROM schedule_id", (err, rows) => {
       if (err) {
-        console.error("Failed to retrieve all schedule channels", err);
+        console.error("Failed to retrieve schedule channels", err);
         return reject(err);
       }
-      resolve(rows.map((row) => row.channel_id));
+      resolve(rows);
     });
   });
 }
 
-// Fungsi untuk mendapatkan channel whitelist
+// Fungsi untuk mendapatkan channel whitelist dari whitelist.db
 async function getWhitelistedChannels() {
   return new Promise((resolve, reject) => {
     db.all("SELECT channel_id FROM whitelist", (err, rows) => {
@@ -188,5 +160,5 @@ async function getWhitelistedChannels() {
 }
 
 module.exports = (client) => {
-  setInterval(() => sendNewsNotifications(client), 60000);
+  setInterval(() => sendNewsNotifications(client), 10000);
 };

@@ -10,14 +10,15 @@ db.serialize(() => {
 
   db.run(
     `CREATE TABLE IF NOT EXISTS notified_live_ids (
-        id INTEGER PRIMARY KEY, 
-        live_id TEXT UNIQUE, 
-        displayName TEXT,
-        room_url_key TEXT,
-        image_square TEXT, 
-        image TEXT, 
-        main_name TEXT
-      )`
+      id INTEGER PRIMARY KEY, 
+      live_id TEXT UNIQUE, 
+      displayName TEXT,
+      room_url_key TEXT,
+      image_square TEXT, 
+      image TEXT, 
+      main_name TEXT,
+      startLive TEXT  
+    )`
   );
 
   db.run(
@@ -81,6 +82,13 @@ db.serialize(() => {
      channel_id TEXT,
      PRIMARY KEY (guild_id)
    )`
+  );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS news (
+        id INTEGER PRIMARY KEY,
+        berita_id TEXT
+      )`
   );
 });
 
