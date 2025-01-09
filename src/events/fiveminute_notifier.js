@@ -139,7 +139,7 @@ async function sendFiveMinuteNotifications(client) {
   });
 
   embed.setDescription(showDescriptions || "**Jadwal Show**");
-  embed.setFooter("Jadwal dan Event JKT48 | JKT48 Live Notification");
+  embed.setFooter({ text: "Jadwal dan Event JKT48 | JKT48 Live Notification" });
 
   db.all(
     `SELECT guild_id, channel_id FROM schedule_id`,
