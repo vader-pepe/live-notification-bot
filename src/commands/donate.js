@@ -37,6 +37,7 @@ async function run({interaction, client}) {
   await interaction.reply({
     embeds: [initialEmbed],
     components: [initialButton],
+    ephemeral: true,
   });
 }
 
