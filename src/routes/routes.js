@@ -11,7 +11,8 @@
   const { fetchBannerData, parseBannerData } = require("../utils/banner");
   const { fetchScheduleSectionData, parseScheduleSectionData } = require("../utils/schedule-section");
   const { fetchHtmlFromJKT48, parseVideoData } = require("../utils/video");
-  const {fetchNewsDetail} = require("../utils/news-id");
+const { fetchNewsDetail } = require("../utils/news-id");
+  const { fetchGiftData, parseGiftData } = require("../utils/gift")
   const { sendLogToDiscord } = require("../other/discordLogger");
 
   const scrapeData = () => {
@@ -183,6 +184,24 @@
       sendLogToDiscord(errorMessage, "Error");
 
       res.status(500).json({ success: false, error: "Internal Server Error" });
+    }
+  });
+
+  router.get("/gifts/:username/:slug", async (req, res) => {
+    const {username, slug} = req.params;
+
+    try {
+      const html = await fetchGiftData(username, slug);
+      const gifts = parseGiftData(html);
+
+      res.json({gifts});
+    } catch (error) {
+      console.error("Error fetching or parsing gift data:", error);
+
+      const errorMessage = `Scraping gift data failed for user ${username} and slug ${slug}. Error: ${error.message}`;
+      sendLogToDiscord(errorMessage, "Error");
+
+      res.status(500).json({error: "Internal Server Error"});
     }
   });
 

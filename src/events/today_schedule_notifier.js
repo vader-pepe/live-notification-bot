@@ -123,11 +123,15 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
       const timePart = showInfoParts[1] ? showInfoParts[1].trim() : "TBD";
 
       const dateParts = datePart.split(", ")[1].split(".");
-      const formattedDate = `${
-        dayNames[new Date(scheduleDate).getDay()]
-      } ${parseInt(dateParts[0], 10)} ${
-        monthNames[parseInt(dateParts[1], 10) - 1]
-      } ${dateParts[2]}`;
+      const scheduleDate = new Date(
+        dateParts[2],
+        parseInt(dateParts[1], 10) - 1,
+        parseInt(dateParts[0], 10)
+      );
+      const formattedDate = `${dayNames[scheduleDate.getDay()]} ${parseInt(
+        dateParts[0],
+        10
+      )} ${monthNames[parseInt(dateParts[1], 10) - 1]} ${dateParts[2]}`;
 
       const birthday = schedule.birthday || "";
       const memberNicknames = schedule.members
