@@ -90,6 +90,15 @@ db.serialize(() => {
         berita_id TEXT
       )`
   );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS gift (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT,
+      list_gift TEXT,
+      UNIQUE(username)
+    )`
+  );
 });
 
 module.exports = db;
