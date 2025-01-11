@@ -144,7 +144,7 @@ antiCrash
       require("./events/schedule_notifier")(client);
       require("./events/events_notifier")(client);
       require("./events/today_schedule_notifier")(client);
-      require("./events/fiveminute_notifier")(client);
+      require("./events/fifteenminute_notifier")(client);
       require("./events/monthBirthday_notifier")(client);
     });
 

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const {EmbedBuilder} = require("discord.js");
 const axios = require("axios");
 const schedule = require("node-schedule");
 const db = require("../db");
@@ -31,7 +31,7 @@ async function fetchShowSchedule() {
   }
 }
 
-async function sendFiveMinuteNotifications(client) {
+async function sendFifteenMinuteNotifications(client) {
   const showSchedules = await fetchShowSchedule();
   if (!showSchedules) {
     console.log("Gagal mengambil data jadwal show.");
@@ -39,7 +39,7 @@ async function sendFiveMinuteNotifications(client) {
   }
 
   const now = new Date();
-  const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60000);
+  const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60000);
 
   const formattedNow = `${now.getDate()}.${
     now.getMonth() + 1
@@ -62,7 +62,7 @@ async function sendFiveMinuteNotifications(client) {
 
     return (
       scheduleDate === formattedNow &&
-      showStartTime <= fiveMinutesFromNow &&
+      showStartTime <= fifteenMinutesFromNow &&
       showStartTime > now
     );
   });
@@ -101,12 +101,8 @@ async function sendFiveMinuteNotifications(client) {
       .filter((nickname) => nickname)
       .join(", ");
 
-    const birthdayMembers = schedule.members
-      .map((member) => {
-        const memberData = membersData.find((m) => m.name === member);
-        return memberData && memberData.birthday ? memberData.name : null;
-      })
-      .filter((b) => b)
+    const birthdayMembers = schedule.birthday
+      .filter((name) => membersData.some((m) => m.name === name))
       .join(", ");
 
     const time = schedule.showInfo.split("Show")[1].trim();
@@ -126,6 +122,7 @@ async function sendFiveMinuteNotifications(client) {
       "Okt",
       "Nov",
       "Des",
+      "Des",
     ];
     const monthName = monthNames[monthIndex];
 
@@ -139,7 +136,7 @@ async function sendFiveMinuteNotifications(client) {
   });
 
   embed.setDescription(showDescriptions || "**Jadwal Show**");
-  embed.setFooter({ text: "Jadwal dan Event JKT48 | JKT48 Live Notification" });
+  embed.setFooter({text: "Jadwal dan Event JKT48 | JKT48 Live Notification"});
 
   db.all(
     `SELECT guild_id, channel_id FROM schedule_id`,
@@ -151,11 +148,11 @@ async function sendFiveMinuteNotifications(client) {
 
       const handledGuilds = new Set();
 
-      for (const { guild_id, channel_id } of scheduleRows) {
+      for (const {guild_id, channel_id} of scheduleRows) {
         try {
           const channel = await client.channels.fetch(channel_id);
           if (channel) {
-            await channel.send({ embeds: [embed] });
+            await channel.send({embeds: [embed]});
             handledGuilds.add(guild_id);
           }
         } catch (error) {
@@ -171,11 +168,11 @@ async function sendFiveMinuteNotifications(client) {
           return;
         }
 
-        for (const { channel_id } of whitelistRows) {
+        for (const {channel_id} of whitelistRows) {
           try {
             const channel = await client.channels.fetch(channel_id);
             if (channel && !handledGuilds.has(channel.guild.id)) {
-              await channel.send({ embeds: [embed] });
+              await channel.send({embeds: [embed]});
             }
           } catch (error) {
             console.error(
@@ -189,7 +186,7 @@ async function sendFiveMinuteNotifications(client) {
 }
 
 module.exports = (client) => {
-  schedule.scheduleJob("*/5 * * * *", () =>
-    sendFiveMinuteNotifications(client)
+  schedule.scheduleJob("*/15 * * * *", () =>
+    sendFifteenMinuteNotifications(client)
   );
 };
