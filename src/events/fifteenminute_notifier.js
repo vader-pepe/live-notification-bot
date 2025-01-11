@@ -89,7 +89,7 @@ async function sendFifteenMinuteNotifications(client) {
 
   const embed = new EmbedBuilder()
     .setTitle(
-      `Selamat ${waktu}.. Sudah siapkah kalian menonton show hari ini? Show akan dimulai dalam 5 menit!`
+      `Selamat ${waktu}.. Sudah siapkah kalian menonton show hari ini? Show akan dimulai dalam 15 menit!`
     )
     .setColor("#ff0000");
 
