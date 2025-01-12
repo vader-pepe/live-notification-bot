@@ -101,7 +101,7 @@ async function sendFifteenMinuteNotifications(client) {
       .filter((nickname) => nickname)
       .join(", ");
 
-    const birthdayMembers = schedule.birthday
+    const birthdayMembers = (schedule.birthday || [])
       .filter((name) => membersData.some((m) => m.name === name))
       .join(", ");
 
