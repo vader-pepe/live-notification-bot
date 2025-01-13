@@ -52,9 +52,8 @@ async function sendBirthdayNotifications(client) {
   const todayDayMonth = `${parseInt(
     today.getDate(),
     10
-  )} ${today.toLocaleString("id-ID", {month: "long"})}`;
+  )} ${today.toLocaleString("id-ID", { month: "long" })}`;
 
-  // Filter ulang tahun hari ini
   const todayBirthdays = birthdays.filter((member) => {
     const birthdayParts = member.birthday.split(" ");
     const birthdayDayMonth = `${parseInt(birthdayParts[0], 10)} ${
@@ -63,74 +62,72 @@ async function sendBirthdayNotifications(client) {
     return birthdayDayMonth === todayDayMonth;
   });
 
-  if (todayBirthdays.length === 0) return;
+  if (todayBirthdays.length === 0) {
+    return null;
+  }
 
   db.serialize(() => {
-    db.run(
-      `CREATE TABLE IF NOT EXISTS birthday (
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        birthday TEXT
-      )`
-    );
-
-    db.all(`SELECT name FROM birthday`, async (err, rows) => {
-      if (err) {
-        console.error("Failed to retrieve announced birthdays", err);
-        return;
-      }
-
-      const announcedBirthdays = new Set(rows.map((row) => row.name));
-      const unannouncedBirthdays = todayBirthdays.filter(
-        (member) => !announcedBirthdays.has(member.name)
-      );
-
-      if (unannouncedBirthdays.length === 0) return;
-
-      db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {
+    db.all(
+      `SELECT guild_id, channel_id FROM schedule_id`,
+      async (err, scheduleRows) => {
         if (err) {
-          console.error("Failed to retrieve channel IDs", err);
+          console.error("Error retrieving schedule channels:", err);
           return;
         }
 
-        const whitelistChannelIds = rows.map((row) => row.channel_id);
+        const handledGuilds = new Set();
 
-        for (const member of unannouncedBirthdays) {
-          const embed = createBirthdayEmbed(member);
-
-          for (const channelId of whitelistChannelIds) {
-            try {
-              const channel = await client.channels.fetch(channelId);
-              if (channel) {
-                await channel.send({embeds: [embed]});
-                console.log(`Birthday message sent for: ${member.name}`);
+        for (const { guild_id, channel_id } of scheduleRows) {
+          try {
+            const channel = await client.channels.fetch(channel_id);
+            if (channel) {
+              for (const member of todayBirthdays) {
+                const embed = createBirthdayEmbed(member);
+                await channel.send({ embeds: [embed] });
+                handledGuilds.add(guild_id);
               }
-            } catch (error) {
-              console.error(
-                `Failed to send birthday notification to channel ${channelId}: ${error}`
-              );
+            } else {
+              console.log(`Channel dengan ID ${channel_id} tidak ditemukan.`);
             }
+          } catch (error) {
+            console.error(
+              `Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+            );
           }
+        }
 
-          db.run(
-            `INSERT INTO birthday (name, birthday) VALUES (?, ?)`,
-            [member.name, today.toISOString().split("T")[0]],
-            (err) => {
-              if (err) {
-                console.error("Failed to insert announced birthday", err);
-              } else {
-                console.log(
-                  `Birthday of ${member.name} has been announced and saved to database!`
+        db.all(
+          "SELECT channel_id FROM whitelist",
+          async (err, whitelistRows) => {
+            if (err) {
+              console.error("Error retrieving whitelist channels:", err);
+              return;
+            }
+
+            for (const { channel_id } of whitelistRows) {
+              try {
+                const channel = await client.channels.fetch(channel_id);
+                if (channel && !handledGuilds.has(channel.guild.id)) {
+                  for (const member of todayBirthdays) {
+                    const embed = createBirthdayEmbed(member);
+                    await channel.send({ embeds: [embed] });
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
                 );
               }
             }
-          );
-        }
-      });
-    });
+          }
+        );
+      }
+    );
   });
 }
 
 module.exports = (client) => {
-  schedule.scheduleJob("0 0 * * *", () => sendBirthdayNotifications(client));
+  schedule.scheduleJob("0 0 * * *", () => {
+    sendBirthdayNotifications(client);
+  });
 };
