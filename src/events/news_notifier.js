@@ -62,7 +62,7 @@ async function sendNewsNotifications(client) {
 
         if (news[0].berita_id !== lastNewsId) {
           const newsDetailResponse = await axios.get(
-            `${config.ipAdress}:${config.port}/api/news/detail/${news[0].berita_id}`
+            `http://localhost:${config.port}/api/news/detail/${news[0].berita_id}`
           );
           const newsDetail = newsDetailResponse.data.data;
           const avatar =
@@ -75,8 +75,9 @@ async function sendNewsNotifications(client) {
               name: `JKT48 Live Notification`,
               iconURL: avatar,
             })
+            .setTitle(newsDetail.judul)
             .setDescription(description)
-            .setFooter({ text: "News JKT48 | JKT48 Live Notification" })
+            .setFooter({text: "News JKT48 | JKT48 Live Notification"})
             .setColor("#ff0000");
 
           const newsButton = new ButtonBuilder()
