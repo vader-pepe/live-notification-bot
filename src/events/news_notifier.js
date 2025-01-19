@@ -62,7 +62,7 @@ async function sendNewsNotifications(client) {
 
         if (news[0].berita_id !== lastNewsId) {
           const newsDetailResponse = await axios.get(
-            `http://localhost:${config.port}/api/news/detail/${news[0].berita_id}`
+            `${config.ipAdress}:${config.port}/api/news/detail/${news[0].berita_id}`
           );
           const newsDetail = newsDetailResponse.data.data;
           const avatar =
