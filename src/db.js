@@ -30,6 +30,7 @@ db.serialize(() => {
         avatar TEXT, 
         image_url TEXT,
         slug TEXT,
+        follower_count TEXT,
         startLive TEXT
       )`
   );
@@ -86,10 +87,10 @@ db.serialize(() => {
 
   db.run(
     `CREATE TABLE IF NOT EXISTS top_gifts (
-      uuid TEXT NOT NULL, 
+      uuid TEXT NOT NULL,
       rank INTEGER NOT NULL,
       name TEXT NOT NULL,
-      total_point INTEGER NOT NULL,
+      total_gold INTEGER NOT NULL,
       PRIMARY KEY (uuid, rank)
     )`
   );

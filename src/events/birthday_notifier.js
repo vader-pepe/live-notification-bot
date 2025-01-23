@@ -1,4 +1,4 @@
-const {EmbedBuilder} = require("discord.js");
+const {EmbedBuilder, ButtonBuilder, ActionRowBuilder} = require("discord.js");
 const axios = require("axios");
 const schedule = require("node-schedule");
 const db = require("../db");
@@ -34,16 +34,27 @@ function createBirthdayEmbed(member) {
   const age = currentYear - birthYear;
 
   const embed = new EmbedBuilder()
-    .setTitle(`Selamat Ulang Tahun ${member.name}! ke-${age} 🎉🎉`)
+    .setTitle(`Ada Member Yang Sedang Ulang Tahun Hari Ini!!`)
     .setImage(imgAlt)
     .setDescription(
-      `🎉 ${member.name}\n📅 ${member.birthday}\n👤 Umur: ${age} tahun\n\n🔗 [Profile Member](https://jkt48.com${member.profileLink})`
+      `Selamat Ulang Tahun **${member.name}**!! 🎉🎉\nSedang berulang tahun ke-**${age}**\n\n**🎂Nama member:** ${member.name}\n**📅Birthdate:** ${member.birthday}\n**🎉Umur:** ${age}\n\nHappy birthdayy 🎉🎉\nWish You All The Best!!\n\n[Profile Member](https://jkt48.com${member.profileLink})`
     )
     .setColor("#ff0000")
     .setFooter({
       text: "Birthday Announcement JKT48 | JKT48 Live Notification",
     });
   return embed;
+}
+
+function memberButton(member) {
+  const button = new ButtonBuilder()
+    .setLabel("Profile Member")
+    .setURL(`https://jkt48.com${member.profileLink}`)
+    .setStyle(5);
+  
+  const buttons = new ActionRowBuilder().addComponents(button);
+
+  return buttons;
 }
 
 async function sendBirthdayNotifications(client) {
@@ -82,8 +93,12 @@ async function sendBirthdayNotifications(client) {
             const channel = await client.channels.fetch(channel_id);
             if (channel) {
               for (const member of todayBirthdays) {
-                const embed = createBirthdayEmbed(member);
-                await channel.send({embeds: [embed]});
+                const embed = createBirthdayEmbed(member)
+                const buttons = memberButton(member)
+                await channel.send({
+                  embeds: [embed],
+                  components: [buttons],
+                });
                 handledGuilds.add(guild_id);
               }
             } else {
@@ -110,7 +125,10 @@ async function sendBirthdayNotifications(client) {
                 if (channel && !handledGuilds.has(channel.guild.id)) {
                   for (const member of todayBirthdays) {
                     const embed = createBirthdayEmbed(member);
-                    await channel.send({embeds: [embed]});
+                    await channel.send({
+                      embeds: [embed],
+                      components: [buttons],
+                    });
                   }
                 }
               } catch (error) {
@@ -125,36 +143,6 @@ async function sendBirthdayNotifications(client) {
     );
   });
 }
-
-// Function to delete old birthday entries
-function deleteOldBirthdays() {
-  const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-  db.all(
-    `SELECT name FROM birthday WHERE date(birthday) <= date(?)`,
-    [oneDayAgo.toISOString()],
-    (err, rows) => {
-      if (err) {
-        console.error("Failed to retrieve old birthday entries", err);
-        return;
-      }
-
-      rows.forEach((row) => {
-        db.run(`DELETE FROM birthday WHERE name = ?`, [row.name], (err) => {
-          if (err) {
-            console.error("Failed to delete birthday entry", err);
-          } else {
-            console.log(`Birthday entry for ${row.name} has been deleted.`);
-          }
-        });
-      });
-    }
-  );
-}
-
-// Schedule the task to run every day at midnight
-schedule.scheduleJob("0 0 * * *", deleteOldBirthdays);
 
 module.exports = (client) => {
   schedule.scheduleJob("0 0 * * *", () => {

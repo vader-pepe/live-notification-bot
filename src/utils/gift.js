@@ -11,11 +11,13 @@ async function scrapeGiftData(uuid_streamer) {
       },
     });
 
-    const rankData = response.data.data.map((item) => ({
-      rank: item.rank,
-      name: item.name,
-      gold: `${item.total_gold} Gold`,
-    }));
+    const rankData = response.data.data
+      .slice(0, 10)
+      .map((item) => ({
+        rank: item.rank,
+        name: item.name,
+        gold: `${item.total_gold} Gold`,
+      }));
 
     return rankData;
   } catch (error) {

@@ -177,8 +177,9 @@ function createEmbed(stream) {
 }
 
 function createEndLiveEmbed(user) {
-  const endLive = parseEndTime(new Date().toLocaleString());
+  const endLive = parseEndTime(new Date());
   const replacedName = replaceName(user.name);
+  const follower_count = user.follower_count;
   const embed = new EmbedBuilder()
     .setColor("#ff0000")
     .setImage(user.image_url)
@@ -191,7 +192,12 @@ function createEndLiveEmbed(user) {
     )
     .addFields(
       {name: "Start Live", value: user.startLive, inline: true},
-      {name: "End Live", value: endLive, inline: true}
+      {name: "End Live", value: endLive, inline: true},
+      {
+        name: "Followers",
+        value: `${follower_count}`,
+        inline: true,
+      }
     )
     .setFooter({
       text: `IDNLive JKT48 | JKT48 Live Notification`,
@@ -205,10 +211,11 @@ async function updateTopGifts(uuid) {
     db.serialize(() => {
       db.run(`DELETE FROM top_gifts WHERE uuid = ?`, [uuid]);
       const stmt = db.prepare(
-        `INSERT INTO top_gifts (uuid, rank, name, total_point) VALUES (?, ?, ?, ?)`
+        `INSERT INTO top_gifts (uuid, rank, name, total_gold) VALUES (?, ?, ?, ?)`
       );
       topGifts.forEach((gift) => {
-        stmt.run(uuid, gift.rank, gift.name, gift.total_point);
+        const totalGold = parseInt(gift.gold.replace(" Gold", ""), 10);
+        stmt.run(uuid, gift.rank, gift.name, totalGold);
       });
       stmt.finalize();
     });
@@ -236,12 +243,13 @@ async function sendNotifications(client) {
         avatar TEXT, 
         image_url TEXT,
         slug TEXT,
+        follower_count TEXT,
         startLive TEXT
       )`
     );
 
     db.all(
-      `SELECT user_id, username, name, avatar, image_url, slug, startLive FROM idn_live`,
+      `SELECT user_id, username, name, avatar, image_url, slug, follower_count, startLive FROM idn_live`,
       async (err, rows) => {
         if (err) {
           console.error("Failed to retrieve notified users", err);
@@ -263,7 +271,6 @@ async function sendNotifications(client) {
           let notificationSent = false;
 
           for (const stream of newStreams) {
-
             console.log(
               `🔴 Member sedang live: ${stream.creator.name} (IDN Live)`
             );
@@ -362,7 +369,7 @@ async function sendNotifications(client) {
             }
 
             db.run(
-              `INSERT INTO idn_live (user_id, username, name, avatar, image_url, slug, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT INTO idn_live (user_id, username, name, avatar, image_url, slug, follower_count, startLive) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
               [
                 stream.creator.uuid,
                 stream.creator.username,
@@ -370,15 +377,12 @@ async function sendNotifications(client) {
                 stream.creator.avatar,
                 stream.image_url,
                 stream.slug,
+                stream.creator.follower_count || 0,
                 parseStartTime(stream.live_at).formatted,
               ],
               (err) => {
                 if (err) {
                   console.error("Failed to insert notified user", err);
-                } else {
-                  console.log(
-                    `${stream.creator.name} sedang live. Menambahkan ${stream.creator.uuid} ke database!`
-                  );
                 }
               }
             );
@@ -398,23 +402,40 @@ async function sendNotifications(client) {
           for (const user of inactiveUsers) {
             const embed = createEndLiveEmbed(user);
             db.all(
-              `SELECT rank, name, total_point FROM top_gifts WHERE uuid = ? ORDER BY rank LIMIT 10`,
+              `SELECT rank, name, total_gold FROM top_gifts WHERE uuid = ? ORDER BY rank LIMIT 10`,
               [user.user_id],
               async (err, topGifts) => {
                 if (err) {
                   console.error("Failed to retrieve top gifts", err);
                 } else {
-                  const topGiftsList = topGifts
+                  const leftColumn = topGifts
+                    .slice(0, 5)
                     .map(
                       (gift) =>
-                        `${gift.rank}. ${gift.name}\n- Gold: ${gift.total_point}`
+                        `${gift.rank}. ${gift.name} (${gift.total_gold} Pts)`
                     )
                     .join("\n");
-                  embed.addFields({
-                    name: "Top Gifters",
-                    value: topGiftsList || "No gifters",
-                    inline: false,
-                  });
+
+                  const rightColumn = topGifts
+                    .slice(5, 10)
+                    .map(
+                      (gift) =>
+                        `${gift.rank}. ${gift.name} (${gift.total_gold} Pts)`
+                    )
+                    .join("\n");
+
+                  embed.addFields(
+                    {
+                      name: "Top Gifters (1-5)",
+                      value: leftColumn || "No gifters",
+                      inline: true,
+                    },
+                    {
+                      name: "Top Gifters (6-10)",
+                      value: rightColumn || "No gifters",
+                      inline: true,
+                    }
+                  );
                   for (const channelId of channelIds) {
                     try {
                       const channel = await client.channels.fetch(channelId);
@@ -465,7 +486,7 @@ async function sendNotifications(client) {
                   console.error("Failed to delete inactive user ID", err);
                 } else {
                   console.log(
-                    `Live ${user.name} telah berakhir. Menghapus ID ${user.user_id} dari database!`
+                    `🔴 Live Member Telah Berakhir: ${user.name} (IDN Live)`
                   );
                 }
               }

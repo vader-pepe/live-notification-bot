@@ -137,15 +137,15 @@ antiCrash
         backupDatabase(userId);
       });
 
-      // require("./events/showroom_notifier")(client);
+      require("./events/showroom_notifier")(client);
       require("./events/idn_notifier")(client);
       require("./events/news_notifier")(client);
-      // require("./events/birthday_notifier")(client);
-      // require("./events/schedule_notifier")(client);
-      // require("./events/events_notifier")(client);
-      // require("./events/today_schedule_notifier")(client);
-      // require("./events/fifteenminute_notifier")(client);
-      // require("./events/monthBirthday_notifier")(client);
+      require("./events/birthday_notifier")(client);
+      require("./events/schedule_notifier")(client);
+      require("./events/events_notifier")(client);
+      require("./events/today_schedule_notifier")(client);
+      require("./events/fifteenminute_notifier")(client);
+      require("./events/monthBirthday_notifier")(client);
     });
 
     client.login(process.env.BOT_TOKEN).catch((error) => {

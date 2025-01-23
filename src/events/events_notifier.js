@@ -50,8 +50,7 @@ async function sendScheduleNotifications(client) {
 
   const schedules = await fetchSchedules();
   if (!schedules || schedules.length === 0) {
-    console.log("Tidak ada jadwal event yang tersedia.");
-    return;
+    return null;
   }
 
   let hasNewSchedules = false;

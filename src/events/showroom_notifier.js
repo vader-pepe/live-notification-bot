@@ -297,10 +297,6 @@ async function sendNotifications(client) {
               (err) => {
                 if (err) {
                   console.error("Failed to insert notified live_id", err);
-                } else {
-                  console.log(
-                    `${stream.main_name} sedang live. Menambahkan ${stream.live_id} ke database!`
-                  );
                 }
               }
             );
@@ -328,8 +324,10 @@ async function sendNotifications(client) {
                 console.error(`Failed to send end live notification:`, error);
               }
             }
-
             db.run("DELETE FROM showroom_live WHERE live_id = ?", liveId);
+            console.log(
+              `🔴 Live Member Telah Berakhir: ${user.main_name} (Showroom)`
+            );
           }
         });
       }
