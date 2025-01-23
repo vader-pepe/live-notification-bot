@@ -37,7 +37,7 @@ function createBirthdayEmbed(member) {
     .setTitle(`Ada Member Yang Sedang Ulang Tahun Hari Ini!!`)
     .setImage(imgAlt)
     .setDescription(
-      `Selamat Ulang Tahun **${member.name}**!! 🎉🎉\nSedang berulang tahun ke-**${age}**\n\n**🎂Nama member:** ${member.name}\n**📅Birthdate:** ${member.birthday}\n**🎉Umur:** ${age}\n\nHappy birthdayy 🎉🎉\nWish You All The Best!!\n\n[Profile Member](https://jkt48.com${member.profileLink})`
+      `Selamat Ulang Tahun **${member.name}**!! 🎉🎉\nSedang berulang tahun ke-**${age}**\n\n**🎂 Nama:** ${member.name}\n**📅 Birthdate:** ${member.birthday}\n**🎉 Umur:** ${age}\n\nHappy birthdayy 🎉🎉\nWish You All The Best!!`
     )
     .setColor("#ff0000")
     .setFooter({
