@@ -1,15 +1,18 @@
 # JKT48 Live Notification Bot
 
-Proyek ini adalah bot Discord yang memberikan notifikasi tentang berita dan jadwal terkait JKT48. Bot ini menggunakan Discord.js dan SQLite untuk menyimpan data.
+Proyek ini adalah bot Discord yang memberikan notifikasi tentang jadwal, berita, live seputar JKT48. Bot ini menggunakan Discord.js dan SQLite untuk menyimpan data.
 
 ## Fitur
 
-- Mengambil berita terbaru dari API dan mengirimkan notifikasi ke channel Discord.
-- Mengambil jadwal pertunjukan JKT48 dan mengirimkan notifikasi ke channel Discord.
+- Memberikan notifikasi live member JKT48 (IDN Live & Showroom).
+- Memberikan notifikasi news terbaru dari website JKT48.
+- Memberikan notifikasi jadwal theater terbaru dari website JKT48.
+- Memberikan notifikasi ulang tahun member JKT48.
+- Mengelola roles yang ingin ter-tag ketika notifikasi dikirimkan.
 - Mengelola whitelist channel untuk pengiriman notifikasi.
 - Menggunakan rate limiting untuk mencegah spam.
 
-## Prerequisites
+## Requirements
 
 Sebelum menjalankan proyek ini, pastikan Anda memiliki:
 
@@ -32,10 +35,10 @@ Sebelum menjalankan proyek ini, pastikan Anda memiliki:
 
 3. Buat file `.env` di root proyek Anda dan tambahkan variabel berikut:
    ```plaintext
-   BOT_TOKEN=your_discord_bot_token
-   OWNER_ID=your_discord_user_id
-   IP_ADDRESS=your_server_ip_address
-   PORT=your_server_port
+   OWNER_ID = YOUR_DISCORD_USER_ID
+   DB_PATH = PUT_DATABASE_PATH || ./whitelist.db
+   BOT_TOKEN = TOKEN_YOUR_BOT
+   PORT = PUT_PORT_HERE || 3000
    ```
 
 ## Menjalankan Proyek
