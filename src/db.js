@@ -9,7 +9,7 @@ db.serialize(() => {
   )`);
 
   db.run(
-    `CREATE TABLE IF NOT EXISTS notified_live_ids (
+    `CREATE TABLE IF NOT EXISTS showroom_live (
       id INTEGER PRIMARY KEY, 
       live_id TEXT UNIQUE, 
       displayName TEXT,
@@ -22,7 +22,7 @@ db.serialize(() => {
   );
 
   db.run(
-    `CREATE TABLE IF NOT EXISTS notified_users (
+    `CREATE TABLE IF NOT EXISTS idn_live (
         id INTEGER PRIMARY KEY, 
         user_id TEXT UNIQUE,
         username TEXT,
@@ -46,14 +46,7 @@ db.serialize(() => {
     birthday TEXT
   )`);
 
-  db.run(`CREATE TABLE IF NOT EXISTS announced_videos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    video_id TEXT UNIQUE NOT NULL,
-    channel_id TEXT NOT NULL,
-    published_at DATETIME NOT NULL
-);`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS schedules (
+  db.run(`CREATE TABLE IF NOT EXISTS theater_schedule (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     setlist TEXT,
     showInfo TEXT,
@@ -92,11 +85,12 @@ db.serialize(() => {
   );
 
   db.run(
-    `CREATE TABLE IF NOT EXISTS gift (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT,
-      list_gift TEXT,
-      UNIQUE(username)
+    `CREATE TABLE IF NOT EXISTS top_gifts (
+      uuid TEXT NOT NULL, 
+      rank INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      total_point INTEGER NOT NULL,
+      PRIMARY KEY (uuid, rank)
     )`
   );
 });

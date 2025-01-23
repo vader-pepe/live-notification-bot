@@ -52,7 +52,7 @@ async function sendBirthdayNotifications(client) {
   const todayDayMonth = `${parseInt(
     today.getDate(),
     10
-  )} ${today.toLocaleString("id-ID", { month: "long" })}`;
+  )} ${today.toLocaleString("id-ID", {month: "long"})}`;
 
   const todayBirthdays = birthdays.filter((member) => {
     const birthdayParts = member.birthday.split(" ");
@@ -77,13 +77,13 @@ async function sendBirthdayNotifications(client) {
 
         const handledGuilds = new Set();
 
-        for (const { guild_id, channel_id } of scheduleRows) {
+        for (const {guild_id, channel_id} of scheduleRows) {
           try {
             const channel = await client.channels.fetch(channel_id);
             if (channel) {
               for (const member of todayBirthdays) {
                 const embed = createBirthdayEmbed(member);
-                await channel.send({ embeds: [embed] });
+                await channel.send({embeds: [embed]});
                 handledGuilds.add(guild_id);
               }
             } else {
@@ -104,13 +104,13 @@ async function sendBirthdayNotifications(client) {
               return;
             }
 
-            for (const { channel_id } of whitelistRows) {
+            for (const {channel_id} of whitelistRows) {
               try {
                 const channel = await client.channels.fetch(channel_id);
                 if (channel && !handledGuilds.has(channel.guild.id)) {
                   for (const member of todayBirthdays) {
                     const embed = createBirthdayEmbed(member);
-                    await channel.send({ embeds: [embed] });
+                    await channel.send({embeds: [embed]});
                   }
                 }
               } catch (error) {
@@ -125,6 +125,36 @@ async function sendBirthdayNotifications(client) {
     );
   });
 }
+
+// Function to delete old birthday entries
+function deleteOldBirthdays() {
+  const oneDayAgo = new Date();
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+  db.all(
+    `SELECT name FROM birthday WHERE date(birthday) <= date(?)`,
+    [oneDayAgo.toISOString()],
+    (err, rows) => {
+      if (err) {
+        console.error("Failed to retrieve old birthday entries", err);
+        return;
+      }
+
+      rows.forEach((row) => {
+        db.run(`DELETE FROM birthday WHERE name = ?`, [row.name], (err) => {
+          if (err) {
+            console.error("Failed to delete birthday entry", err);
+          } else {
+            console.log(`Birthday entry for ${row.name} has been deleted.`);
+          }
+        });
+      });
+    }
+  );
+}
+
+// Schedule the task to run every day at midnight
+schedule.scheduleJob("0 0 * * *", deleteOldBirthdays);
 
 module.exports = (client) => {
   schedule.scheduleJob("0 0 * * *", () => {

@@ -10,7 +10,7 @@ async function fetchLiveStreams() {
     const allLives = response.data.onlives.flatMap((genre) => genre.lives);
     return allLives;
   } catch (error) {
-    console.error("Failed to fetch Showroom", error.message);
+    console.error("Failed to fetch Showroom");
     return null;
   }
 }
@@ -193,7 +193,7 @@ async function sendNotifications(client) {
 
   db.serialize(() => {
     db.run(
-      `CREATE TABLE IF NOT EXISTS notified_live_ids (
+      `CREATE TABLE IF NOT EXISTS showroom_live (
         id INTEGER PRIMARY KEY, 
         live_id TEXT UNIQUE, 
         displayName TEXT,
@@ -206,7 +206,7 @@ async function sendNotifications(client) {
     );
 
     db.all(
-      `SELECT live_id, displayName, room_url_key, image_square, image, main_name, startLive FROM notified_live_ids`,
+      `SELECT live_id, displayName, room_url_key, image_square, image, main_name, startLive FROM showroom_live`,
       async (err, rows) => {
         if (err) {
           console.error("Failed to retrieve notified live_ids", err);
@@ -228,6 +228,11 @@ async function sendNotifications(client) {
           let notificationSent = false;
 
           for (const stream of newStreams) {
+
+            console.log(
+              `🔴 Member sedang live: ${stream.main_name} (Showroom)`
+            );
+
             const startLive = parseDateTime(new Date().toISOString());
             const embed = createEmbed(stream, startLive);
             for (const channelId of channelIds) {
@@ -279,9 +284,7 @@ async function sendNotifications(client) {
             }
 
             db.run(
-              `INSERT INTO notified_live_ids 
-                (live_id, displayName, room_url_key, image_square, image, main_name, startLive) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
               [
                 stream.live_id,
                 stream.main_name,
@@ -290,7 +293,16 @@ async function sendNotifications(client) {
                 stream.image,
                 stream.main_name,
                 startLive,
-              ]
+              ],
+              (err) => {
+                if (err) {
+                  console.error("Failed to insert notified live_id", err);
+                } else {
+                  console.log(
+                    `${stream.main_name} sedang live. Menambahkan ${stream.live_id} ke database!`
+                  );
+                }
+              }
             );
           }
 
@@ -317,7 +329,7 @@ async function sendNotifications(client) {
               }
             }
 
-            db.run("DELETE FROM notified_live_ids WHERE live_id = ?", liveId);
+            db.run("DELETE FROM showroom_live WHERE live_id = ?", liveId);
           }
         });
       }

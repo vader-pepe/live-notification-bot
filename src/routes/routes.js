@@ -1,6 +1,5 @@
 // routes.js
 const express = require("express");
-const puppeteer = require("puppeteer");
 const router = express.Router();
 const {fetchData, parseData} = require("../utils/theater");
 const {fetchNewsData, parseNewsData} = require("../utils/news");
@@ -199,17 +198,22 @@ router.get("/banners", async (req, res) => {
   }
 });
 
-router.get("/gifts/:username/:slug", async (req, res) => {
-  const {username, slug} = req.params;
+router.get("/gift/:uuid_streamer", async (req, res) => {
+  const {uuid_streamer} = req.params;
 
   try {
-    const result = await scrapeGiftData(username, slug);
-    res.status(200).json({success: true, data: result});
+    const data = await scrapeGiftData(uuid_streamer);
+    res.status(200).json({
+      status: 200,
+      message: "SUCCESS",
+      data: data,
+    });
   } catch (error) {
-    console.error("Error scraping data:", error.message);
-    res
-      .status(500)
-      .json({success: false, message: "Failed to fetch gift data"});
+    res.status(500).json({
+      status: 500,
+      message: "Failed to fetch gift data",
+      error: error.message,
+    });
   }
 });
 

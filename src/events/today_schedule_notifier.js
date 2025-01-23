@@ -45,7 +45,6 @@ async function fetchShowSchedule() {
     );
     return response.data;
   } catch (error) {
-    console.error("Error fetching show schedule:", error);
     return null;
   }
 }

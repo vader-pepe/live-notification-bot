@@ -25,7 +25,7 @@ app.use(limiter);
 async function fetchNews() {
   try {
     const response = await axios.get(
-      `${config.ipAdress}:${config.port}/api/news`
+      `${config.ipAddress}:${config.port}/api/news`
     );
     return response.data.berita;
   } catch (error) {
@@ -46,7 +46,7 @@ async function sendNewsNotifications(client) {
     db.run(
       `CREATE TABLE IF NOT EXISTS news (
         id INTEGER PRIMARY KEY,
-        berita_id TEXT
+        berita_id TEXT UNIQUE
       )`
     );
 
@@ -61,69 +61,89 @@ async function sendNewsNotifications(client) {
         const lastNewsId = row ? row.berita_id : null;
 
         if (news[0].berita_id !== lastNewsId) {
-          const newsDetailResponse = await axios.get(
-            `${config.ipAdress}:${config.port}/api/news/detail/${news[0].berita_id}`
-          );
-          const newsDetail = newsDetailResponse.data.data;
-          const avatar =
-            "https://res.cloudinary.com/dag7esigq/image/upload/v1731258674/Profile_Picture_BOT_epmcfl.png";
-
-          const description = truncateString(newsDetail.konten, 4096);
-
-          const embed = new EmbedBuilder()
-            .setAuthor({
-              name: `JKT48 Live Notification`,
-              iconURL: avatar,
-            })
-            .setTitle(newsDetail.judul)
-            .setDescription(description)
-            .setFooter({text: "News JKT48 | JKT48 Live Notification"})
-            .setColor("#ff0000");
-
-          const newsButton = new ButtonBuilder()
-            .setLabel("Baca Selengkapnya")
-            .setURL(
-              `https://jkt48.com/news/detail/id/${news[0].berita_id}?lang=id`
-            )
-            .setStyle(5);
-
-          const buttons = new ActionRowBuilder().addComponents(newsButton);
-
-          const allScheduleChannels = await getAllScheduleChannels();
-          const whitelistedChannels = await getWhitelistedChannels();
-
-          const handledGuilds = new Set();
-
-          for (const { guild_id, channel_id } of allScheduleChannels) {
-            const channel = await client.channels.fetch(channel_id);
-            if (channel) {
-              await channel.send({
-                embeds: [embed],
-                components: [buttons],
-              });
-              handledGuilds.add(guild_id);
-            }
-          }
-
-          for (const channelId of whitelistedChannels) {
-            const channel = await client.channels.fetch(channelId);
-            if (channel && !handledGuilds.has(channel.guild.id)) {
-              await channel.send({
-                embeds: [embed],
-                components: [buttons],
-              });
-            }
-          }
-
-          db.run(
-            `INSERT INTO news (berita_id) VALUES (?)`,
+          // Check if the news ID already exists in the database
+          db.get(
+            `SELECT 1 FROM news WHERE berita_id = ?`,
             [news[0].berita_id],
-            (err) => {
+            async (err, exists) => {
               if (err) {
-                console.error("Failed to insert new news ID", err);
+                console.error("Failed to check news ID existence", err);
+                return;
+              }
+
+              if (!exists) {
+                const newsDetailResponse = await axios.get(
+                  `${config.ipAddress}:${config.port}/api/news/detail/${news[0].berita_id}`
+                );
+                const newsDetail = newsDetailResponse.data.data;
+                const avatar =
+                  "https://res.cloudinary.com/dag7esigq/image/upload/v1731258674/Profile_Picture_BOT_epmcfl.png";
+
+                const description = truncateString(newsDetail.konten, 4096);
+
+                const embed = new EmbedBuilder()
+                  .setAuthor({
+                    name: `JKT48 Live Notification`,
+                    iconURL: avatar,
+                  })
+                  .setTitle(newsDetail.judul)
+                  .setDescription(description)
+                  .setFooter({text: "News JKT48 | JKT48 Live Notification"})
+                  .setColor("#ff0000");
+
+                const newsButton = new ButtonBuilder()
+                  .setLabel("Baca Selengkapnya")
+                  .setURL(
+                    `https://jkt48.com/news/detail/id/${news[0].berita_id}?lang=id`
+                  )
+                  .setStyle(5);
+
+                const buttons = new ActionRowBuilder().addComponents(
+                  newsButton
+                );
+
+                const allScheduleChannels = await getAllScheduleChannels();
+                const whitelistedChannels = await getWhitelistedChannels();
+
+                const handledGuilds = new Set();
+
+                for (const {guild_id, channel_id} of allScheduleChannels) {
+                  const channel = await client.channels.fetch(channel_id);
+                  if (channel) {
+                    await channel.send({
+                      embeds: [embed],
+                      components: [buttons],
+                    });
+                    handledGuilds.add(guild_id);
+                  }
+                }
+
+                for (const channelId of whitelistedChannels) {
+                  const channel = await client.channels.fetch(channelId);
+                  if (channel && !handledGuilds.has(channel.guild.id)) {
+                    await channel.send({
+                      embeds: [embed],
+                      components: [buttons],
+                    });
+                  }
+                }
+
+                db.run(
+                  `INSERT INTO news (berita_id) VALUES (?)`,
+                  [news[0].berita_id],
+                  (err) => {
+                    if (err) {
+                      console.error("Failed to insert new news ID", err);
+                    } else {
+                      console.log(
+                        `News ${news[0].berita_id} has been added to the database!`
+                      );
+                    }
+                  }
+                );
               } else {
                 console.log(
-                  `News ${news[0].berita_id} has been added to the database!`
+                  `News ${news[0].berita_id} already exists in the database.`
                 );
               }
             }

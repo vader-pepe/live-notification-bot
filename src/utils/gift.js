@@ -1,46 +1,24 @@
-const puppeteer = require("puppeteer");
+const axios = require("axios");
+require("dotenv").config();
 
-async function scrapeGiftData(username, slug) {
-  const url = `https://idn.app/${username}/live/${slug}`;
-  const browser = await puppeteer.launch({headless: true});
-  const page = await browser.newPage();
+async function scrapeGiftData(uuid_streamer) {
+  const url = `https://api.idn.app/api/v1/gift/livestream/top-rank?uuid_streamer=${uuid_streamer}&n=1`;
 
   try {
-    await page.setUserAgent(
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-    );
-
-    await page.goto(url, {waitUntil: "networkidle2"});
-    await page.waitForSelector("div[data-rank]", {timeout: 10000});
-
-    const rankData = await page.evaluate(() => {
-      const rankElements = document.querySelectorAll("div[data-rank]");
-      const results = [];
-
-      rankElements.forEach((element) => {
-        if (element.closest(".top-three")) return;
-
-        const rank = element.getAttribute("data-rank");
-        const name =
-          element
-            .querySelector("div.profile > div.name-wrapper > p.name")
-            ?.textContent.trim() || "Unknown";
-        const gold =
-          element.querySelector("div.profile > p.gold")?.textContent.trim() ||
-          "0 Gold";
-
-        results.push({rank, name, gold});
-
-        if (results.length >= 10) return results;
-      });
-
-      return results.slice(0, 10);
+    const response = await axios.get(url, {
+      headers: {
+        "X-API-KEY": process.env.X_API_KEY,
+      },
     });
 
-    await browser.close();
+    const rankData = response.data.data.map((item) => ({
+      rank: item.rank,
+      name: item.name,
+      gold: `${item.total_gold} Gold`,
+    }));
+
     return rankData;
   } catch (error) {
-    await browser.close();
     throw error;
   }
 }

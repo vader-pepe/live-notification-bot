@@ -1,6 +1,9 @@
 const axios = require("axios");
 const {EmbedBuilder} = require("discord.js");
 const db = require("../db");
+const {scrapeGiftData} = require("../utils/gift");
+
+let liveStreams = [];
 
 async function fetchLiveStreams() {
   try {
@@ -40,6 +43,7 @@ async function fetchLiveStreams() {
     });
     return response.data.data.searchLivestream.result;
   } catch (error) {
+    console.error("Failed to fetch IDN Lives");
     return null;
   }
 }
@@ -147,7 +151,9 @@ function createEmbed(stream) {
       iconURL: stream.creator.avatar,
     })
     .setDescription(
-      `**${replacedName.split(" JKT48").join("")}** lagi live cuy!\nYuk Ditonton..`
+      `**${replacedName
+        .split(" JKT48")
+        .join("")}** lagi live cuy!\nYuk Ditonton..`
     )
     .addFields(
       {name: "Judul", value: stream.title, inline: true},
@@ -184,13 +190,31 @@ function createEndLiveEmbed(user) {
       `Live IDN **${replacedName.split(" JKT48")}** telah berakhir.`
     )
     .addFields(
-      { name: "Start Live", value: user.startLive, inline: true },
-      { name: "End Live", value: endLive, inline: true }
+      {name: "Start Live", value: user.startLive, inline: true},
+      {name: "End Live", value: endLive, inline: true}
     )
     .setFooter({
       text: `IDNLive JKT48 | JKT48 Live Notification`,
     });
   return embed;
+}
+
+async function updateTopGifts(uuid) {
+  try {
+    const topGifts = await scrapeGiftData(uuid);
+    db.serialize(() => {
+      db.run(`DELETE FROM top_gifts WHERE uuid = ?`, [uuid]);
+      const stmt = db.prepare(
+        `INSERT INTO top_gifts (uuid, rank, name, total_point) VALUES (?, ?, ?, ?)`
+      );
+      topGifts.forEach((gift) => {
+        stmt.run(uuid, gift.rank, gift.name, gift.total_point);
+      });
+      stmt.finalize();
+    });
+  } catch (error) {
+    console.error("Failed to update top gifts", error);
+  }
 }
 
 async function sendNotifications(client) {
@@ -200,11 +224,11 @@ async function sendNotifications(client) {
     return;
   }
 
-  const liveStreams = filterLiveStreams(streams);
+  liveStreams = filterLiveStreams(streams);
 
   db.serialize(() => {
     db.run(
-      `CREATE TABLE IF NOT EXISTS notified_users (
+      `CREATE TABLE IF NOT EXISTS idn_live (
         id INTEGER PRIMARY KEY, 
         user_id TEXT UNIQUE,
         username TEXT,
@@ -217,7 +241,7 @@ async function sendNotifications(client) {
     );
 
     db.all(
-      `SELECT user_id, username, name, avatar, image_url, slug, startLive FROM notified_users`,
+      `SELECT user_id, username, name, avatar, image_url, slug, startLive FROM idn_live`,
       async (err, rows) => {
         if (err) {
           console.error("Failed to retrieve notified users", err);
@@ -239,7 +263,13 @@ async function sendNotifications(client) {
           let notificationSent = false;
 
           for (const stream of newStreams) {
+
+            console.log(
+              `🔴 Member sedang live: ${stream.creator.name} (IDN Live)`
+            );
+
             const embed = createEmbed(stream);
+            updateTopGifts(stream.creator.uuid);
             for (const channelId of channelIds) {
               try {
                 const channel = await client.channels.fetch(channelId);
@@ -332,7 +362,7 @@ async function sendNotifications(client) {
             }
 
             db.run(
-              `INSERT INTO notified_users (user_id, username, name, avatar, image_url, slug, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              `INSERT INTO idn_live (user_id, username, name, avatar, image_url, slug, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
               [
                 stream.creator.uuid,
                 stream.creator.username,
@@ -367,79 +397,68 @@ async function sendNotifications(client) {
 
           for (const user of inactiveUsers) {
             const embed = createEndLiveEmbed(user);
-            for (const channelId of channelIds) {
-              try {
-                const channel = await client.channels.fetch(channelId);
-                if (channel) {
-                  try {
-                    await channel.send({embeds: [embed]});
-                  } catch (error) {
-                    if (
-                      error.code === 50013 ||
-                      error.code === 50001 ||
-                      error.code === 10003
-                    ) {
-                      console.error(
-                        `Missing permissions for channel ${channelId}. Removing from whitelist.`
-                      );
-                      db.run(
-                        `DELETE FROM whitelist WHERE channel_id = ?`,
-                        [channelId],
-                        (err) => {
-                          if (err) {
-                            console.error(
-                              "Failed to delete channel from whitelist",
-                              err
-                            );
-                          } else {
-                            console.log(
-                              `Channel ${channelId} removed from whitelist.`
-                            );
-                          }
-                        }
-                      );
-                    } else {
-                      console.error(
-                        `Failed to send end live notification to channel ${channelId}: ${error}`
-                      );
-                    }
-                  }
-                }
-              } catch (error) {
-                if (
-                  error.code === 50013 ||
-                  error.code === 50001 ||
-                  error.code === 10003
-                ) {
-                  console.error(
-                    `Missing permissions for channel ${channelId}. Removing from whitelist.`
-                  );
-                  db.run(
-                    `DELETE FROM whitelist WHERE channel_id = ?`,
-                    [channelId],
-                    (err) => {
-                      if (err) {
+            db.all(
+              `SELECT rank, name, total_point FROM top_gifts WHERE uuid = ? ORDER BY rank LIMIT 10`,
+              [user.user_id],
+              async (err, topGifts) => {
+                if (err) {
+                  console.error("Failed to retrieve top gifts", err);
+                } else {
+                  const topGiftsList = topGifts
+                    .map(
+                      (gift) =>
+                        `${gift.rank}. ${gift.name}\n- Gold: ${gift.total_point}`
+                    )
+                    .join("\n");
+                  embed.addFields({
+                    name: "Top Gifters",
+                    value: topGiftsList || "No gifters",
+                    inline: false,
+                  });
+                  for (const channelId of channelIds) {
+                    try {
+                      const channel = await client.channels.fetch(channelId);
+                      if (channel) {
+                        await channel.send({embeds: [embed]});
+                      }
+                    } catch (error) {
+                      if (
+                        error.code === 50013 ||
+                        error.code === 50001 ||
+                        error.code === 10003
+                      ) {
                         console.error(
-                          "Failed to delete channel from whitelist",
-                          err
+                          `Missing permissions for channel ${channelId}. Removing from whitelist.`
+                        );
+                        db.run(
+                          `DELETE FROM whitelist WHERE channel_id = ?`,
+                          [channelId],
+                          (err) => {
+                            if (err) {
+                              console.error(
+                                "Failed to delete channel from whitelist",
+                                err
+                              );
+                            } else {
+                              console.log(
+                                `Channel ${channelId} removed from whitelist.`
+                              );
+                            }
+                          }
                         );
                       } else {
-                        console.log(
-                          `Channel ${channelId} removed from whitelist.`
+                        console.error(
+                          `Failed to send end live notification to channel ${channelId}: ${error}`
                         );
                       }
                     }
-                  );
-                } else {
-                  console.error(
-                    `Failed to send end live notification to channel ${channelId}: ${error}`
-                  );
+                  }
                 }
               }
-            }
+            );
 
             db.run(
-              `DELETE FROM notified_users WHERE user_id = ?`,
+              `DELETE FROM idn_live WHERE user_id = ?`,
               [user.user_id],
               (err) => {
                 if (err) {
@@ -457,6 +476,10 @@ async function sendNotifications(client) {
     );
   });
 }
+
+setInterval(() => {
+  liveStreams.forEach((stream) => updateTopGifts(stream.creator.uuid));
+}, 10000);
 
 module.exports = (client) => {
   setInterval(() => sendNotifications(client), 30000);

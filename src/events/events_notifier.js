@@ -122,7 +122,6 @@ async function fetchSchedules() {
     );
     return response.data;
   } catch (error) {
-    console.error("Error fetching schedules:", error);
     return null;
   }
 }

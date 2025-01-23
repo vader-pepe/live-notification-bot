@@ -165,7 +165,6 @@ async function fetchSchedules() {
     );
     return response.data;
   } catch (error) {
-    console.error("Error fetching schedules:", error);
     return null;
   }
 }
@@ -197,7 +196,7 @@ async function getScheduleChannels() {
 async function checkScheduleExists(showInfo, members) {
   return new Promise((resolve, reject) => {
     db.get(
-      "SELECT 1 FROM schedules WHERE showInfo = ? AND members = ? LIMIT 1",
+      `SELECT 1 FROM theater_schedule WHERE showInfo = ? AND members = ? LIMIT 1`,
       [showInfo, members.join(", ")],
       (err, row) => {
         if (err) {
@@ -212,13 +211,15 @@ async function checkScheduleExists(showInfo, members) {
 
 async function saveScheduleToDatabase(setlist, showInfo, members) {
   db.run(
-    `INSERT INTO schedules (setlist, showInfo, members) VALUES (?, ?, ?)`,
+    `INSERT INTO theater_schedule (setlist, showInfo, members) VALUES (?, ?, ?)`,
     [setlist, showInfo, members.join(", ")],
     (err) => {
       if (err) {
         console.error("Failed to insert new schedule", err);
       } else {
-        console.log(`Schedule ${setlist} has been added to the database!`);
+        console.log(
+          `Schedule ${setlist} has been added to the theater_schedule!`
+        );
       }
     }
   );
@@ -226,7 +227,7 @@ async function saveScheduleToDatabase(setlist, showInfo, members) {
 
 async function getExistingSchedulesFromDatabase() {
   return new Promise((resolve, reject) => {
-    db.all("SELECT showInfo, members FROM schedules", (err, rows) => {
+    db.all(`SELECT showInfo, members FROM theater_schedule`, (err, rows) => {
       if (err) {
         console.error("Failed to retrieve existing schedules", err);
         return reject(err);
@@ -252,7 +253,7 @@ async function fetchChannel(client, channelId) {
 
 async function sendEmbed(channel, embed) {
   try {
-    await channel.send({ embeds: [embed] });
+    await channel.send({embeds: [embed]});
   } catch (error) {
     console.error(
       `Error sending embed to channel ${channel.id}:`,

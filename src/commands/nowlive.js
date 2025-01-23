@@ -9,9 +9,9 @@ const data = new SlashCommandBuilder()
 async function run({interaction, client}) {
   db.serialize(() => {
     db.all(
-      `SELECT name AS member_name, username, slug, startLive AS start_live, 'IDN Live' AS platform, NULL AS room_url_key FROM notified_users
+      `SELECT name AS member_name, username, slug, startLive AS start_live, 'IDN Live' AS platform, NULL AS room_url_key FROM idn_live
        UNION
-       SELECT displayName AS member_name, NULL AS username, NULL AS slug, startLive AS start_live, 'Showroom' AS platform, room_url_key FROM notified_live_ids`,
+       SELECT displayName AS member_name, NULL AS username, NULL AS slug, startLive AS start_live, 'Showroom' AS platform, room_url_key FROM showroom_live `,
       (err, rows) => {
         if (err) {
           console.error("Failed to retrieve live members", err);
