@@ -125,6 +125,7 @@ async function sendBirthdayNotifications(client) {
                 if (channel && !handledGuilds.has(channel.guild.id)) {
                   for (const member of todayBirthdays) {
                     const embed = createBirthdayEmbed(member);
+                    const buttons = memberButton(member);
                     await channel.send({
                       embeds: [embed],
                       components: [buttons],
