@@ -1,341 +1,289 @@
-const axios = require("axios");
 const {EmbedBuilder} = require("discord.js");
+const axios = require("axios");
 const db = require("../db");
+const config = require("../main/config");
+const fs = require("fs");
 
-async function fetchLiveStreams() {
-  try {
-    const response = await axios.get(
-      "https://www.showroom-live.com/api/live/onlives"
+let membersData = [];
+fs.readFile("src/member.json", "utf8", (err, data) => {
+  if (err) {
+    console.error("Error reading member data:", err);
+    return;
+  }
+  membersData = JSON.parse(data);
+});
+
+function getNickname(name) {
+  const member = membersData.find((m) => m.name === name);
+  return member && member.nicknames.length > 0 ? member.nicknames[0] : null;
+}
+
+async function sendScheduleNotifications(client) {
+  const whitelistedChannels = await getWhitelistedChannels();
+  const scheduleChannels = await getScheduleChannels();
+
+  if (
+    (!whitelistedChannels || whitelistedChannels.length === 0) &&
+    (!scheduleChannels || scheduleChannels.length === 0)
+  ) {
+    console.error("No whitelisted channels found.");
+    return;
+  }
+
+  const schedules = await fetchSchedules();
+  if (!schedules || schedules.length === 0) {
+    return null;
+  }
+
+  let hasNewSchedules = false;
+  const embed = new EmbedBuilder()
+    .setColor("#ff0000")
+    .setFooter({text: "JKT48 Live Notification"});
+
+  const fields = [];
+
+  for (const schedule of schedules) {
+    const existsInDatabase = await checkScheduleExists(
+      schedule.showInfo,
+      schedule.members
     );
-    const allLives = response.data.onlives.flatMap((genre) => genre.lives);
-    return allLives;
-  } catch (error) {
-    console.error("Failed to fetch Showroom");
+    if (existsInDatabase) {
+      continue;
+    }
+
+    const showInfoParts = schedule.showInfo.split("Show");
+    const dateTime = showInfoParts[0].trim();
+    const time = showInfoParts[1].trim();
+
+    const dateParts = dateTime.split(", ");
+    if (dateParts.length < 2) {
+      console.error("Invalid date format:", dateTime);
+      continue;
+    }
+
+    const dayOfWeek = dateParts[0];
+    const dayAndMonthYear = dateParts[1].split(".");
+    if (dayAndMonthYear.length < 3) {
+      console.error("Invalid date format:", dateParts[1]);
+      continue;
+    }
+
+    const day = dayAndMonthYear[0].trim();
+    const monthIndex = parseInt(dayAndMonthYear[1], 10) - 1;
+    const year = dayAndMonthYear[2].trim();
+
+    const monthNames = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agt",
+      "Sept",
+      "Okt",
+      "Nov",
+      "Des",
+    ];
+    const monthName = monthNames[monthIndex];
+
+    const memberNicknames = schedule.members
+      .map(getNickname)
+      .filter((nickname) => nickname)
+      .join(", ");
+
+    const birthday = schedule.birthday || "";
+
+    fields.push({
+      name: schedule.setlist,
+      value: `🕒 ${time}\n🗓️ ${day} ${monthName} ${year}${
+        birthday ? `\n🎂 ${birthday}` : ""
+      }${memberNicknames ? `\n👥 ${memberNicknames}` : ""}`,
+      inline: false,
+    });
+
+    await saveScheduleToDatabase(
+      schedule.setlist,
+      schedule.showInfo,
+      schedule.members
+    );
+    hasNewSchedules = true;
+  }
+
+  if (hasNewSchedules) {
+    const existingSchedules = await getExistingSchedulesFromDatabase();
+    const hasMembers = schedules.some((schedule) => {
+      const existsInDatabase = existingSchedules.some(
+        (existingSchedule) =>
+          existingSchedule.showInfo === schedule.showInfo &&
+          existingSchedule.members.length > 0
+      );
+      if (existsInDatabase) {
+        return false;
+      }
+      return schedule.members.length > 0;
+    });
+
+    embed.setTitle(
+      hasMembers
+        ? "Berikut adalah list member yang akan tampil pada show yang akan datang."
+        : "Berikut adalah jadwal show yang akan datang."
+    );
+  }
+
+  if (hasNewSchedules) {
+    embed.addFields(fields);
+
+    const handledGuilds = new Set();
+
+    for (const {guild_id, channel_id} of scheduleChannels) {
+      const channel = await fetchChannel(client, channel_id);
+      if (channel) {
+        await sendEmbed(channel, embed);
+        handledGuilds.add(guild_id);
+      }
+    }
+
+    for (const channelId of whitelistedChannels) {
+      const channel = await fetchChannel(client, channelId);
+      if (channel && !handledGuilds.has(channel.guild.id)) {
+        await sendEmbed(channel, embed);
+      }
+    }
+
+    console.log("❗ Jadwal baru telah berhasil dikirim.");
+  } else {
     return null;
   }
 }
 
-function filterLiveStreams(streams) {
-  return streams.filter(
-    (stream) =>
-      stream.room_url_key?.startsWith("JKT48_") ||
-      (stream.room_url_key?.startsWith("officialJKT48") &&
-        stream.main_name?.includes("JKT48"))
-  );
-}
-
-function parseDateTime(localeString) {
-  const date = new Date(localeString);
-  const options = {hour: "2-digit", minute: "2-digit", hour12: false};
-  const time = date.toLocaleTimeString("en-GB", options);
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear().toString().slice(-2);
-  return `${time}/${day}/${month}/${year}`;
-}
-
-function getTimeOfDay(hour) {
-  if (hour >= 0 && hour < 7) {
-    return "Subuh";
-  } else if (hour >= 7 && hour < 10) {
-    return "Pagi";
-  } else if (hour >= 10 && hour < 15) {
-    return "Siang";
-  } else if (hour >= 15 && hour < 18) {
-    return "Sore";
-  } else {
-    return "Malam";
-  }
-}
-
-const nameReplacements = [
-  {original: "Fiony", replacement: "Cepio"},
-  {original: "Adel", replacement: "Dedel"},
-  {original: "Gita", replacement: "Gita 🥶"},
-  {original: "Gracia", replacement: "Ci Gre"},
-  {original: "Lia", replacement: "Ci Lia"},
-  {original: "Olla", replacement: "Olali"},
-  {original: "Oniel", replacement: "Onyil"},
-  {original: "Jessi", replacement: "Jeci"},
-  {original: "Helisma", replacement: "Ceu Eli"},
-  {original: "Indah", replacement: "Kak Indah"},
-  {original: "Kathrina", replacement: "Atin"},
-  {original: "Greesel", replacement: "Icel"},
-  {original: "Cynthia", replacement: "Ciput"},
-  {original: "Erine", replacement: "Erni"},
-  {original: "Delynn", replacement: "Deyinn"},
-  {original: "Feni", replacement: "Teh Mpen"},
-  {original: "Freya", replacement: "Fureya"},
-  {original: "Cathy", replacement: "Keti"},
-  {original: "Oline", replacement: "Oyin"},
-  {original: "Aralie", replacement: "Ayayi"},
-  {original: "Christy", replacement: "Kiti"},
-  {original: "Callie", replacement: "Keli"},
-  {original: "Flora", replacement: "Mplorr"},
-  {original: "Gracie", replacement: "Ecarg"},
-  {original: "Muthe", replacement: "Mumuchang"},
-  {original: "Nayla", replacement: "Nayra"},
-  {original: "Regie", replacement: "Reji"},
-  {original: "JKT48 Official SHOWROOM", replacement: "Om JOT"},
-];
-
-function replaceName(name) {
-  for (const {original, replacement} of nameReplacements) {
-    if (name.includes(original)) {
-      return name.replace(original, replacement);
-    }
-  }
-  return name;
-}
-
-function createEmbed(stream, startLive) {
-  const displayName = stream.main_name.split(/\/|（/)[0].trim();
-  const replacedName = replaceName(displayName);
-  const startHour = new Date().getHours();
-  const waktu = getTimeOfDay(startHour);
-
-  if (displayName.includes("Cynthia")) {
-    stream.image =
-      "https://res.cloudinary.com/dag7esigq/image/upload/Frame_1_1_y2omq5.png";
-  } else if (displayName.includes("Fiony")) {
-    stream.image =
-      "https://res.cloudinary.com/dag7esigq/image/upload/Frame_2_ite5ya.png";
-  }
-
-  const embed = new EmbedBuilder()
-    .setColor("#ff0000")
-    .setAuthor({
-      name: `Selamat ${waktu}, ${displayName} Sedang Live Showroom nih!`,
-      iconURL: stream.image_square,
-    })
-    .setDescription(
-      `**${replacedName.split(" JKT48")}** lagi live cuy!\nYuk Ditonton..`
-    )
-    .addFields(
-      {name: "Nama", value: displayName, inline: true},
-      {
-        name: "Followers",
-        value: stream.follower_num.toString(),
-        inline: true,
-      },
-      {
-        name: "Start Live",
-        value: startLive,
-        inline: true,
-      },
-      ...(displayName.includes("JKT48 Official SHOWROOM")
-        ? []
-        : [
-            {
-              name: "Tonton di Browser!",
-              value: `[Multi Stream](https://dc.crstlnz.my.id/multi) | [Tonton Fullscreen](https://dc.crstlnz.my.id/watch/${stream.room_url_key})`,
-              inline: true,
-            },
-          ]),
-      {
-        name: "Tonton di Showroom!",
-        value: `[Showroom](https://www.showroom-live.com/r/${stream.room_url_key})`,
-        inline: true,
-      }
-    )
-    .setImage(stream.image)
-    .setFooter({text: "Showroom JKT48 | JKT48 Live Notification"});
-  return embed;
-}
-
-function createEndLiveEmbed(user, startLive, endLive) {
-  const replacedName = replaceName(user.displayName.split(/\/|（/)[0].trim());
-
-  if (user.displayName.includes("Cynthia")) {
-    user.image =
-      "https://res.cloudinary.com/dag7esigq/image/upload/v1726244745/Frame_1_suvxgv.png";
-  } else if (user.displayName.includes("Fiony")) {
-    user.image =
-      "https://res.cloudinary.com/dag7esigq/image/upload/v1726244610/Frame_2_zyjuf3.png";
-  }
-
-  const embed = new EmbedBuilder()
-    .setColor("#ff0000")
-    .setAuthor({
-      name: `${user.displayName
-        .split(/\/|（/)[0]
-        .trim()} Baru Saja Selesai Live Showroom!`,
-      iconURL: user.image_square,
-    })
-    .setDescription(`Live Showroom **${replacedName}** telah berakhir.`)
-    .addFields(
-      {name: "Start Live", value: startLive, inline: true},
-      {name: "End Live", value: endLive, inline: true}
-    )
-    .setImage(user.image)
-    .setFooter({text: `Showroom JKT48 | JKT48 Live Notification`});
-  return embed;
-}
-
-function removeDuplicates(streams) {
-  const uniqueStreams = [];
-  const seen = new Set();
-
-  for (const stream of streams) {
-    if (!seen.has(stream.live_id)) {
-      uniqueStreams.push(stream);
-      seen.add(stream.live_id);
-    }
-  }
-
-  return uniqueStreams;
-}
-
-async function sendNotifications(client) {
-  const streams = await fetchLiveStreams();
-  if (!streams) return;
-
-  const liveStreams = filterLiveStreams(streams);
-  const uniqueLiveStreams = removeDuplicates(liveStreams);
-
-  db.serialize(() => {
-    db.run(
-      `CREATE TABLE IF NOT EXISTS showroom_live (
-        id INTEGER PRIMARY KEY, 
-        live_id TEXT UNIQUE, 
-        displayName TEXT,
-        room_url_key TEXT,
-        image_square TEXT, 
-        image TEXT, 
-        main_name TEXT,
-        startLive TEXT
-      )`
+async function fetchSchedules() {
+  try {
+    const response = await axios.get(
+      `http://localhost:${config.port}/api/schedule`
     );
+    return response.data;
+  } catch (error) {
+    return null;
+  }
+}
 
-    db.all(
-      `SELECT live_id, displayName, room_url_key, image_square, image, main_name, startLive FROM showroom_live`,
-      async (err, rows) => {
+async function getWhitelistedChannels() {
+  return new Promise((resolve, reject) => {
+    db.all("SELECT channel_id FROM whitelist", (err, rows) => {
+      if (err) {
+        console.error("Failed to retrieve whitelisted channels", err);
+        return reject(err);
+      }
+      resolve(rows.map((row) => row.channel_id));
+    });
+  });
+}
+
+async function getScheduleChannels() {
+  return new Promise((resolve, reject) => {
+    db.all("SELECT guild_id, channel_id FROM schedule_id", (err, rows) => {
+      if (err) {
+        console.error("Failed to retrieve schedule channels", err);
+        return reject(err);
+      }
+      resolve(rows);
+    });
+  });
+}
+
+async function checkScheduleExists(showInfo, members) {
+  return new Promise((resolve, reject) => {
+    db.get(
+      `SELECT 1 FROM theater_schedule WHERE showInfo = ? AND members = ? LIMIT 1`,
+      [showInfo, members.join(", ")],
+      (err, row) => {
         if (err) {
-          console.error("Failed to retrieve notified live_ids", err);
-          return;
+          console.error("Error checking schedule existence:", err);
+          return reject(err);
         }
-
-        const notifiedLiveIds = new Map(rows.map((row) => [row.live_id, row]));
-        const newStreams = uniqueLiveStreams.filter(
-          (stream) => !notifiedLiveIds.has(stream.live_id.toString())
-        );
-
-        db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {
-          if (err) {
-            console.error("Failed to retrieve whitelisted channels", err);
-            return;
-          }
-          const channelIds = rows.map((row) => row.channel_id);
-
-          let notificationSent = false;
-
-          for (const stream of newStreams) {
-            console.log(
-              `🔴 Member sedang live: ${stream.main_name} (Showroom)`
-            );
-
-            const startLive = parseDateTime(new Date().toISOString());
-            const embed = createEmbed(stream, startLive);
-            for (const channelId of channelIds) {
-              try {
-                const channel = await client.channels.fetch(channelId);
-                if (channel) {
-                  db.get(
-                    `SELECT role_id FROM tag_roles WHERE guild_id = ?`,
-                    [channel.guild.id],
-                    async (err, row) => {
-                      if (err) {
-                        console.error("Database error:", err);
-                        return;
-                      }
-
-                      let content = "";
-                      if (row) {
-                        content =
-                          row.role_id === "everyone"
-                            ? "@everyone"
-                            : `<@&${row.role_id}>`;
-                      }
-
-                      try {
-                        await channel.send({content, embeds: [embed]});
-                        notificationSent = true;
-                      } catch (error) {
-                        if (error.code === 50013 || error.code === 50001) {
-                          console.error(
-                            L`Missing permissions for channel ${channelId}. Removing from whitelist.`
-                          );
-                          db.run(
-                            `DELETE FROM whitelist WHERE channel_id = ?`,
-                            channelId
-                          );
-                        } else {
-                          console.error(
-                            `Error sending notification to channel ${channelId}`,
-                            error
-                          );
-                        }
-                      }
-                    }
-                  );
-                }
-              } catch (error) {
-                console.error(`Failed to fetch channel ${channelId}`, error);
-              }
-            }
-
-            db.run(
-              `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                stream.live_id,
-                stream.main_name,
-                stream.room_url_key,
-                stream.image_square,
-                stream.image,
-                stream.main_name,
-                startLive,
-              ],
-              (err) => {
-                if (err) {
-                  console.error("Failed to insert notified live_id", err);
-                }
-              }
-            );
-          }
-
-          const endedLiveIds = [...notifiedLiveIds.keys()].filter(
-            (liveId) =>
-              !uniqueLiveStreams.some(
-                (stream) => stream.live_id.toString() === liveId
-              )
-          );
-
-          for (const liveId of endedLiveIds) {
-            const user = notifiedLiveIds.get(liveId);
-            const startLive = user.startLive;
-            const endLive = parseDateTime(new Date().toISOString());
-            const embed = createEndLiveEmbed(user, startLive, endLive);
-            for (const channelId of channelIds) {
-              try {
-                const channel = await client.channels.fetch(channelId);
-                if (channel) {
-                  await channel.send({embeds: [embed]});
-                }
-              } catch (error) {
-                console.error(`Failed to send end live notification:`, error);
-              }
-            }
-            db.run("DELETE FROM showroom_live WHERE live_id = ?", liveId);
-            console.log(
-              `🔴 Live Member Telah Berakhir: ${user.main_name} (Showroom)`
-            );
-          }
-        });
+        resolve(!!row);
       }
     );
   });
 }
 
+async function saveScheduleToDatabase(setlist, showInfo, members) {
+  const createdAt = new Date().toISOString();
+  db.run(
+    `INSERT INTO theater_schedule (setlist, showInfo, members, created_at) VALUES (?, ?, ?, ?)`,
+    [setlist, showInfo, members.join(", "), createdAt],
+    (err) => {
+      if (err) {
+        console.error("Failed to insert new schedule", err);
+      } else {
+        console.log(
+          `❗ Schedule ${setlist} berhasil disimpan di theater_schedule!`
+        );
+      }
+    }
+  );
+}
+
+async function getExistingSchedulesFromDatabase() {
+  return new Promise((resolve, reject) => {
+    db.all(`SELECT showInfo, members FROM theater_schedule`, (err, rows) => {
+      if (err) {
+        console.error("Failed to retrieve existing schedules", err);
+        return reject(err);
+      }
+      resolve(
+        rows.map((row) => ({
+          showInfo: row.showInfo,
+          members: row.members.split(", "),
+        }))
+      );
+    });
+  });
+}
+
+async function fetchChannel(client, channelId) {
+  try {
+    return await client.channels.fetch(channelId);
+  } catch (error) {
+    console.error(`Failed to fetch channel ${channelId}:`, error);
+    return null;
+  }
+}
+
+async function sendEmbed(channel, embed) {
+  try {
+    await channel.send({embeds: [embed]});
+  } catch (error) {
+    console.error(
+      `Error sending embed to channel ${channel.id}:`,
+      error.message
+    );
+  }
+}
+
+async function deleteOldSchedules() {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const formattedDate = sevenDaysAgo.toISOString();
+
+  db.run(
+    `DELETE FROM theater_schedule WHERE created_at < ?`,
+    [formattedDate],
+    (err) => {
+      if (err) {
+        console.error("Failed to delete old schedules", err);
+      } else {
+        console.log("Old schedules successfully deleted.");
+      }
+    }
+  );
+}
+
+// Schedule the deletion to run daily
+setInterval(deleteOldSchedules, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+
 module.exports = (client) => {
-  setInterval(() => sendNotifications(client), 30000);
+  setInterval(() => sendScheduleNotifications(client), 60000);
 };
