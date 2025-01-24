@@ -94,6 +94,14 @@ db.serialize(() => {
       PRIMARY KEY (uuid, rank)
     )`
   );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS webhook(
+      url TEXT,
+      user_id TEXT,
+      guild_id TEXT
+    )`
+  );
 });
 
 module.exports = db;

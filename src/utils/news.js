@@ -6,13 +6,24 @@ const fetchNewsData = async () => {
 
   try {
     const response = await axios.get(url);
-    return response.data;
+    const data = response.data;
+
+    if (typeof data !== "string") {
+      throw new Error("Expected a string response from the server");
+    }
+
+    return data; // Kembalikan HTML ke pemanggil
   } catch (error) {
-    return null;
+    console.error("Error fetching or parsing news data:", error.message);
+    return null; // Kembalikan null jika terjadi kesalahan
   }
 };
 
 const parseNewsData = (html) => {
+  if (typeof html !== "string") {
+    throw new Error("Invalid HTML content passed to parseNewsData");
+  }
+
   const $ = cheerio.load(html);
   const data = {};
   const list_berita_mentah = $(".entry-news__list");
@@ -39,10 +50,15 @@ const parseNewsData = (html) => {
     model["judul"] = judul;
 
     const url_berita_full = title_div.find("h3").find("a").attr("href");
-    const url_berita_full_rplc = url_berita_full.replace("?lang=id", "");
-    const url_berita_full_rplc_2 = url_berita_full_rplc.replace("/news/detail/id/", "");
+    if (url_berita_full) {
+      const url_berita_full_rplc = url_berita_full.replace("?lang=id", "");
+      const url_berita_full_rplc_2 = url_berita_full_rplc.replace(
+        "/news/detail/id/",
+        ""
+      );
+      model["berita_id"] = url_berita_full_rplc_2;
+    }
 
-    model["berita_id"] = url_berita_full_rplc_2;
     data_list_berita.push(model);
     position_berita += 1;
   }

@@ -47,15 +47,15 @@ router.get("/schedule", async (req, res) => {
 
 router.get("/news", async (req, res) => {
   try {
-    const htmlData = await fetchNewsData();
-    const newsData = parseNewsData(htmlData);
-    res.json(newsData);
+    const html = await fetchNewsData();
+    if (!html) {
+      return res.status(500).json({error: "Failed to fetch news data"});
+    }
+    const parsedData = parseNewsData(html);
+    return res.status(200).json(parsedData);
   } catch (error) {
-    console.error("Error fetching or parsing news data:", error);
-    const errorMessage = `Scraping news failed. Error: ${error.message}`;
-    sendLogToDiscord(errorMessage, "Error");
-
-    res.status(500).json({error: "Internal Server Error"});
+    console.error("Error in /news route:", error.message);
+    return res.status(500).json({error: "Internal Server Error"});
   }
 });
 
