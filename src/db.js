@@ -56,15 +56,6 @@ db.serialize(() => {
     )`
   );
 
-  db.run(`CREATE TABLE IF NOT EXISTS todayShow (
-    id INTEGER PRIMARY KEY,
-    setlist TEXT NOT NULL,
-    date TEXT NOT NULL,
-    time TEXT NOT NULL,
-    members TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
   db.run(
     `CREATE TABLE IF NOT EXISTS schedule_id (
      guild_id TEXT,
