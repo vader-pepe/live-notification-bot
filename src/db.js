@@ -42,11 +42,6 @@ db.serialize(() => {
       )`
   );
 
-  db.run(`CREATE TABLE IF NOT EXISTS birthday (
-    name TEXT PRIMARY KEY,
-    birthday TEXT
-  )`);
-
   db.run(`CREATE TABLE IF NOT EXISTS theater_schedule (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     setlist TEXT,
