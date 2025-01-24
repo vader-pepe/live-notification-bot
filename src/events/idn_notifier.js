@@ -420,7 +420,7 @@ async function sendNotifications(client) {
                     .slice(5, 10)
                     .map(
                       (gift) =>
-                        `${gift.rank}. ${gift.name} (${gift.total_gold} Pts)`
+                        `${gift.rank}. ${gift.name} (${gift.total_gold} Gold)`
                     )
                     .join("\n");
 
