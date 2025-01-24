@@ -114,14 +114,6 @@ async function sendScheduleNotifications(client) {
   if (hasNewSchedules) {
     const existingSchedules = await getExistingSchedulesFromDatabase();
     const hasMembers = schedules.some((schedule) => {
-      const existsInDatabase = existingSchedules.some(
-        (existingSchedule) =>
-          existingSchedule.showInfo === schedule.showInfo &&
-          existingSchedule.members.length > 0
-      );
-      if (existsInDatabase) {
-        return false;
-      }
       return schedule.members.length > 0;
     });
 
@@ -161,7 +153,7 @@ async function sendScheduleNotifications(client) {
 async function fetchSchedules() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule`
+      `http://localhost:${config.port}/api/schedule`
     );
     return response.data;
   } catch (error) {
@@ -210,9 +202,10 @@ async function checkScheduleExists(showInfo, members) {
 }
 
 async function saveScheduleToDatabase(setlist, showInfo, members) {
+  const createdAt = new Date().toISOString();
   db.run(
-    `INSERT INTO theater_schedule (setlist, showInfo, members) VALUES (?, ?, ?)`,
-    [setlist, showInfo, members.join(", ")],
+    `INSERT INTO theater_schedule (setlist, showInfo, members, created_at) VALUES (?, ?, ?, ?)`,
+    [setlist, showInfo, members.join(", "), createdAt],
     (err) => {
       if (err) {
         console.error("Failed to insert new schedule", err);
@@ -261,6 +254,26 @@ async function sendEmbed(channel, embed) {
     );
   }
 }
+
+async function deleteOldSchedules() {
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  const formattedDate = sevenDaysAgo.toISOString();
+
+  db.run(
+    `DELETE FROM theater_schedule WHERE created_at < ?`,
+    [formattedDate],
+    (err) => {
+      if (err) {
+        console.error("Failed to delete old schedules", err);
+      } else {
+        console.log("Old schedules successfully deleted.");
+      }
+    }
+  );
+}
+
+setInterval(deleteOldSchedules, 24 * 60 * 60 * 1000);
 
 module.exports = (client) => {
   setInterval(() => sendScheduleNotifications(client), 60000);
