@@ -14,9 +14,11 @@ async function scrapeGiftData(uuid_streamer) {
     const rankData = response.data.data
       .slice(0, 10)
       .map((item) => ({
+        image_url: item.image_url,
         rank: item.rank,
         name: item.name,
         gold: `${item.total_gold} Gold`,
+        point: `${item.total_point} Point`
       }));
 
     return rankData;

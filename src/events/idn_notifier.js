@@ -211,11 +211,12 @@ async function updateTopGifts(uuid) {
     db.serialize(() => {
       db.run(`DELETE FROM top_gifts WHERE uuid = ?`, [uuid]);
       const stmt = db.prepare(
-        `INSERT INTO top_gifts (uuid, rank, name, total_gold) VALUES (?, ?, ?, ?)`
+        `INSERT INTO top_gifts (uuid, rank, name, total_gold, total_point) VALUES (?, ?, ?, ?, ?)`
       );
       topGifts.forEach((gift) => {
         const totalGold = parseInt(gift.gold.replace(" Gold", ""), 10);
-        stmt.run(uuid, gift.rank, gift.name, totalGold);
+        const totalPoint = parseInt(gift.point.replace(" Point", ""), 10);
+        stmt.run(uuid, gift.rank, gift.name, totalGold, totalPoint);
       });
       stmt.finalize();
     });
@@ -402,17 +403,18 @@ async function sendNotifications(client) {
           for (const user of inactiveUsers) {
             const embed = createEndLiveEmbed(user);
             db.all(
-              `SELECT rank, name, total_gold FROM top_gifts WHERE uuid = ? ORDER BY rank LIMIT 10`,
+              `SELECT rank, name, total_gold, total_point FROM top_gifts WHERE uuid = ? ORDER BY rank LIMIT 10`,
               [user.user_id],
               async (err, topGifts) => {
                 if (err) {
                   console.error("Failed to retrieve top gifts", err);
                 } else {
+                  let teks = "```";
                   const leftColumn = topGifts
                     .slice(0, 5)
                     .map(
                       (gift) =>
-                        `${gift.rank}. ${gift.name} (${gift.total_gold} Pts)`
+                        `${gift.rank}. ${gift.name}\n(${gift.total_gold} Gold) | (${gift.total_point} Point)`
                     )
                     .join("\n");
 
@@ -420,19 +422,19 @@ async function sendNotifications(client) {
                     .slice(5, 10)
                     .map(
                       (gift) =>
-                        `${gift.rank}. ${gift.name} (${gift.total_gold} Gold)`
+                        `${gift.rank}. ${gift.name}\n(${gift.total_gold} Gold) | (${gift.total_point} Point)`
                     )
                     .join("\n");
 
                   embed.addFields(
                     {
                       name: "Top Gifters (1-5)",
-                      value: leftColumn || "No gifters",
+                      value: `${teks}${leftColumn}${teks}` || "No gifters",
                       inline: true,
                     },
                     {
                       name: "Top Gifters (6-10)",
-                      value: rightColumn || "No gifters",
+                      value: `${teks}${rightColumn}${teks}` || "No gifters",
                       inline: true,
                     }
                   );
@@ -510,7 +512,7 @@ async function sendNotifications(client) {
 
 setInterval(() => {
   liveStreams.forEach((stream) => updateTopGifts(stream.creator.uuid));
-}, 10000);
+}, 30000);
 
 module.exports = (client) => {
   setInterval(() => sendNotifications(client), 30000);

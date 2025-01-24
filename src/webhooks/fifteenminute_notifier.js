@@ -33,7 +33,7 @@ async function fetchShowSchedule() {
 async function sendFifteenMinuteNotifications(client) {
   const showSchedules = await fetchShowSchedule();
   if (!showSchedules) {
-    console.log("Gagal mengambil data jadwal show.");
+    console.log("❗ Gagal mengambil data jadwal show.");
     return;
   }
 

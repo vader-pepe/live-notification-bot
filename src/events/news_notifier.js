@@ -136,14 +136,14 @@ async function sendNewsNotifications(client) {
                       console.error("Failed to insert new news ID", err);
                     } else {
                       console.log(
-                        `News ${news[0].berita_id} has been added to the database!`
+                        `❗ News ${news[0].berita_id} berhasil disimpan di database!`
                       );
                     }
                   }
                 );
               } else {
                 console.log(
-                  `News ${news[0].berita_id} already exists in the database.`
+                  `❗ News ${news[0].berita_id} sudah ada di database.`
                 );
               }
             }

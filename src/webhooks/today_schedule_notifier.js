@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const {EmbedBuilder} = require("discord.js");
 const axios = require("axios");
 const schedule = require("node-schedule");
 const db = require("../db");
@@ -167,7 +167,7 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
     });
   }
 
-  embed.setFooter({ text: "Jadwal dan Event JKT48 | JKT48 Live Notification" });
+  embed.setFooter({text: "Jadwal dan Event JKT48 | JKT48 Live Notification"});
   return embed;
 }
 
@@ -178,7 +178,7 @@ async function sendTodayCombinedNotifications(client) {
   ]);
 
   if (!showSchedules || !eventSchedules) {
-    console.log("Gagal mengambil data jadwal atau event.");
+    console.log("❗ Gagal mengambil data jadwal atau event.");
     return;
   }
 
@@ -208,7 +208,7 @@ async function sendTodayCombinedNotifications(client) {
   );
 
   if (totalShows === 0 && totalEvents === 0) {
-    console.log("Tidak ada jadwal show atau event hari ini.");
+    console.log("❗ Tidak ada jadwal show atau event hari ini.");
     return;
   }
 
@@ -228,17 +228,17 @@ async function sendTodayCombinedNotifications(client) {
       }
 
       if (scheduleRows.length === 0) {
-        console.log("Tidak ada channel schedule yang terdaftar.");
+        console.log("❗ Tidak ada channel schedule yang terdaftar.");
         return;
       }
 
       const handledGuilds = new Set();
 
-      for (const { guild_id, channel_id } of scheduleRows) {
+      for (const {guild_id, channel_id} of scheduleRows) {
         try {
           const channel = await client.channels.fetch(channel_id);
           if (channel) {
-            await channel.send({ embeds: [embed] });
+            await channel.send({embeds: [embed]});
             handledGuilds.add(guild_id);
           }
         } catch (error) {
@@ -254,12 +254,12 @@ async function sendTodayCombinedNotifications(client) {
           return;
         }
 
-        whitelistRows.forEach(({ channel_id }) => {
+        whitelistRows.forEach(({channel_id}) => {
           client.channels
             .fetch(channel_id)
             .then((channel) => {
               if (channel && !handledGuilds.has(channel.guild.id)) {
-                channel.send({ embeds: [embed] }).catch((error) => {
+                channel.send({embeds: [embed]}).catch((error) => {
                   console.error(
                     `Gagal mengirim pengumuman ke channel ${channel_id}: ${error}`
                   );

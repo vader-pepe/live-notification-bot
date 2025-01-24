@@ -178,7 +178,7 @@ async function sendTodayCombinedNotifications(client) {
   ]);
 
   if (!showSchedules || !eventSchedules) {
-    console.log("Gagal mengambil data jadwal atau event.");
+    console.log("❗ Gagal mengambil data jadwal atau event.");
     return;
   }
 
@@ -208,7 +208,7 @@ async function sendTodayCombinedNotifications(client) {
   );
 
   if (totalShows === 0 && totalEvents === 0) {
-    console.log("Tidak ada jadwal show atau event hari ini.");
+    console.log("❗ Tidak ada jadwal show atau event hari ini.");
     return;
   }
 
@@ -228,7 +228,7 @@ async function sendTodayCombinedNotifications(client) {
       }
 
       if (scheduleRows.length === 0) {
-        console.log("Tidak ada channel schedule yang terdaftar.");
+        console.log("❗ Tidak ada channel schedule yang terdaftar.");
         return;
       }
 

@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const {EmbedBuilder} = require("discord.js");
 const fs = require("fs");
 const schedule = require("node-schedule");
 const db = require("../db");
@@ -73,9 +73,9 @@ async function sendMonthBirthdayNotifications(client) {
           }! 🎉`
         )
         .setColor("#ff0000")
-        .setFooter({ text: "Birthday Announcement JKT48" });
+        .setFooter({text: "Birthday Announcement JKT48"});
 
-      birthdays.forEach(({ name, date, year, age }) => {
+      birthdays.forEach(({name, date, year, age}) => {
         embed.addFields({
           name: name,
           value: `${date} (${age} tahun)`,
@@ -92,17 +92,17 @@ async function sendMonthBirthdayNotifications(client) {
           }
 
           if (scheduleRows.length === 0) {
-            console.log("Tidak ada channel schedule yang terdaftar.");
+            console.log("❗ Tidak ada channel schedule yang terdaftar.");
             return;
           }
 
           const handledGuilds = new Set();
 
-          for (const { guild_id, channel_id } of scheduleRows) {
+          for (const {guild_id, channel_id} of scheduleRows) {
             try {
               const channel = await client.channels.fetch(channel_id);
               if (channel) {
-                await channel.send({ embeds: [embed] });
+                await channel.send({embeds: [embed]});
                 handledGuilds.add(guild_id);
               }
             } catch (error) {
@@ -119,12 +119,12 @@ async function sendMonthBirthdayNotifications(client) {
               return;
             }
 
-            whitelistRows.forEach(({ channel_id }) => {
+            whitelistRows.forEach(({channel_id}) => {
               client.channels
                 .fetch(channel_id)
                 .then((channel) => {
                   if (channel && !handledGuilds.has(channel.guild.id)) {
-                    channel.send({ embeds: [embed] }).catch((error) => {
+                    channel.send({embeds: [embed]}).catch((error) => {
                       console.error(
                         `Gagal mengirim pengumuman ke channel ${channel_id}: ${error}`
                       );

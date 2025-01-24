@@ -92,7 +92,7 @@ async function sendMonthBirthdayNotifications(client) {
           }
 
           if (scheduleRows.length === 0) {
-            console.log("Tidak ada channel schedule yang terdaftar.");
+            console.log("❗ Tidak ada channel schedule yang terdaftar.");
             return;
           }
 

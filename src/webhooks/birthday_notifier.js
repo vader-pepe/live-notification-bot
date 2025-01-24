@@ -64,10 +64,10 @@ async function sendBirthdayNotifications() {
   });
 
   if (todayBirthdays.length === 0) {
-    console.log("Tidak ada member yang berulang tahun hari ini.");
+    console.log("❗ Tidak ada member yang berulang tahun hari ini.");
     return;
   } else {
-    console.log("Ada member yang berulang tahun hari ini:", todayBirthdays);
+    console.log("❗ Ada member yang berulang tahun hari ini:", todayBirthdays);
   }
 
   db.all("SELECT url FROM webhook", async (err, webhookRows) => {
@@ -77,7 +77,7 @@ async function sendBirthdayNotifications() {
     }
 
     if (webhookRows.length === 0) {
-      console.log("Tidak ada webhook yang terdaftar di database.");
+      console.log("❗ Tidak ada webhook yang terdaftar di database.");
       return;
     }
 

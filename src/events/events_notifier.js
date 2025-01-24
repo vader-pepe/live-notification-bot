@@ -108,7 +108,7 @@ async function sendScheduleNotifications(client) {
       }
     }
 
-    console.log("Jadwal baru telah dikirim.");
+    console.log("❗ Jadwal baru telah dikirim.");
   } else {
     return null;
   }
@@ -164,9 +164,9 @@ async function saveEventToDatabase(eventName) {
 
     db.run(`INSERT INTO events (eventName) VALUES (?)`, [eventName], (err) => {
       if (err) {
-        console.error("Failed to insert new event", err);
+        console.error("❗ Gagal menyimpan event baru", err);
       } else {
-        console.log(`Event ${eventName} has been added to the database!`);
+        console.log(`❗ Event ${eventName} berhasil disimpan!`);
       }
     });
   });

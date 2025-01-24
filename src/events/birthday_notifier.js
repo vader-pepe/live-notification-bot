@@ -102,7 +102,7 @@ async function sendBirthdayNotifications(client) {
                 handledGuilds.add(guild_id);
               }
             } else {
-              console.log(`Channel dengan ID ${channel_id} tidak ditemukan.`);
+              console.log(`❗ Channel dengan ID ${channel_id} tidak ditemukan.`);
             }
           } catch (error) {
             console.error(

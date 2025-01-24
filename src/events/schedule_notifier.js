@@ -152,7 +152,7 @@ async function sendScheduleNotifications(client) {
       }
     }
 
-    console.log("Jadwal baru telah dikirim.");
+    console.log("❗ Jadwal baru telah berhasil dikirim.");
   } else {
     return null;
   }
@@ -218,7 +218,7 @@ async function saveScheduleToDatabase(setlist, showInfo, members) {
         console.error("Failed to insert new schedule", err);
       } else {
         console.log(
-          `Schedule ${setlist} has been added to the theater_schedule!`
+          `❗ Schedule ${setlist} berhasil disimpan di theater_schedule!`
         );
       }
     }
