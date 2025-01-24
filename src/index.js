@@ -146,6 +146,15 @@ antiCrash
       require("./events/today_schedule_notifier")(client);
       require("./events/fifteenminute_notifier")(client);
       require("./events/monthBirthday_notifier")(client);
+      // require("./webhooks/showroom_notifier")(client);
+      // require("./webhooks/idn_notifier")(client);
+      // require("./webhooks/news_notifier")(client);
+      require("./webhooks/birthday_notifier")(client);
+      // require("./webhooks/schedule_notifier")(client);
+      // require("./webhooks/events_notifier")(client);
+      // require("./webhooks/today_schedule_notifier")(client);
+      // require("./webhooks/fifteenminute_notifier")(client);
+      // require("./webhooks/monthBirthday_notifier")(client);
     });
 
     client.login(process.env.BOT_TOKEN).catch((error) => {
