@@ -42,12 +42,15 @@ db.serialize(() => {
       )`
   );
 
-  db.run(`CREATE TABLE IF NOT EXISTS theater_schedule (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    setlist TEXT,
-    showInfo TEXT,
-    members TEXT
-  )`);
+  db.run(
+    `CREATE TABLE IF NOT EXISTS theater_schedule (
+      id INTEGER PRIMARY KEY,
+      setlist TEXT,
+      showInfo TEXT,
+      members TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+  );
 
   db.run(
     `CREATE TABLE IF NOT EXISTS events (
