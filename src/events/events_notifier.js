@@ -185,5 +185,5 @@ async function getPrioritizedChannels() {
 }
 
 module.exports = (client) => {
-  setInterval(() => sendScheduleNotifications(client), 10000);
+  setInterval(() => sendScheduleNotifications(client), 30000);
 };
