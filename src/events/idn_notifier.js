@@ -436,11 +436,21 @@ async function sendNotifications(client) {
                       inline: true,
                     }
                   );
+
                   for (const channelId of channelIds) {
                     try {
                       const channel = await client.channels.fetch(channelId);
                       if (channel) {
                         await channel.send({embeds: [embed]});
+                        db.run(
+                          `DELETE FROM top_gifts WHERE uuid = ?`,
+                          [user.user_id],
+                          (err) => {
+                            if (err) {
+                              console.error("Failed to delete gift data", err);
+                            }
+                          }
+                        );
                       }
                     } catch (error) {
                       if (
