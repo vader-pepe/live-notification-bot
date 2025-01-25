@@ -512,7 +512,7 @@ async function sendNotifications(client) {
 
 setInterval(() => {
   liveStreams.forEach((stream) => updateTopGifts(stream.creator.uuid));
-}, 30000);
+}, 15000);
 
 module.exports = (client) => {
   setInterval(() => sendNotifications(client), 30000);
