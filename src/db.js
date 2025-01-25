@@ -80,7 +80,7 @@ db.serialize(() => {
       rank INTEGER NOT NULL,
       name TEXT NOT NULL,
       total_gold INTEGER NOT NULL,
-      total_point INTEGER,
+      total_point INTEGER NOT NULL,
       PRIMARY KEY (uuid, rank)
     )`
   );
