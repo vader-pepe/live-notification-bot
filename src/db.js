@@ -69,8 +69,8 @@ db.serialize(() => {
 
   db.run(
     `CREATE TABLE IF NOT EXISTS news (
-        id INTEGER PRIMARY KEY,
-        berita_id TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        berita_id TEXT UNIQUE
       )`
   );
 
