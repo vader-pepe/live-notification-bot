@@ -7,6 +7,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const db = require("../db");
+const { content } = require("googleapis/build/src/apis/content");
 require("dotenv").config();
 
 const OWNER_ID = process.env.OWNER_ID;
@@ -67,7 +68,7 @@ async function processWebhookRequest(interaction, client, webhookUrl) {
   const embed = new EmbedBuilder()
     .setTitle("Webhook Request")
     .setDescription(
-      "Terdapat permintaan webhook baru yang membutuhkan persetujuan."
+      `Terdapat permintaan webhook baru yang membutuhkan persetujuan.`
     )
     .addFields(
       {name: "User ID", value: interaction.user.id, inline: true},
@@ -90,6 +91,7 @@ async function processWebhookRequest(interaction, client, webhookUrl) {
   );
 
   const message = await approvalChannel.send({
+    content: `<@${OWNER_ID}>`,
     embeds: [embed],
     components: [buttons],
   });
