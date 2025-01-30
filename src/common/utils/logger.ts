@@ -8,8 +8,8 @@ type RequestData = {
 
 export const sendLogToDiscord = async (
   logMessage: string,
-  logType,
-  requestData: RequestData,
+  logType: "Error" | "Info",
+  requestData: RequestData = { method: "N/A", url: "N/A", responseTime: "N/A" },
   discordWebhookUrl: string,
   botAvatarUrl: string,
 ) => {
