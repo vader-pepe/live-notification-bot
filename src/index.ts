@@ -1,20 +1,19 @@
-#!/usr/bin/env node
-// NOTE: You can remove the first line if you don't plan to release an
-// executable package. E.g. code that can be used as cli like prettier or eslint
+import { env } from "@/common/utils/envConfig";
+import { app, logger } from "@/server";
 
-const main = () => {
-  console.log("hello Node.js and Typescript world :]");
-  console.log("live reloading");
-  console.log("live reloading2");
+const server = app.listen(env.PORT, () => {
+  const { NODE_ENV, HOST, PORT } = env;
+  logger.info(`Server (${NODE_ENV}) running on port http://${HOST}:${PORT}`);
+});
+
+const onCloseSignal = () => {
+  logger.info("sigint received, shutting down");
+  server.close(() => {
+    logger.info("server closed");
+    process.exit();
+  });
+  setTimeout(() => process.exit(1), 10000).unref(); // Force shutdown after 10s
 };
 
-// This was just here to force a linting error for now to demonstrate/test the
-// eslint pipeline. You can uncomment this and run "yarn lint:check" to test the
-// linting.
-// const x: number[] = [1, 2];
-// const y: Array<number> = [3, 4];
-// if (x == y) {
-//   console.log("equal!");
-// }
-
-main();
+process.on("SIGINT", onCloseSignal);
+process.on("SIGTERM", onCloseSignal);
