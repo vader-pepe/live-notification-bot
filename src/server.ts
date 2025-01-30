@@ -7,6 +7,7 @@ import { openAPIRouter } from "@/api-docs/openAPIRouter";
 import { bannersRouter } from "@/api/banners/bannersRouter";
 import { birthdaysRouter } from "@/api/birthday/birthdayRouter";
 import { eventsRouter } from "@/api/events/eventsRouter";
+import { giftRouter } from "@/api/gift/giftRouter";
 import { healthCheckRouter } from "@/api/healthCheck/healthCheckRouter";
 import { memberRouter } from "@/api/member/memberRouter";
 import { newsRouter } from "@/api/news/newsRouter";
@@ -17,8 +18,6 @@ import errorHandler from "@/common/middleware/errorHandler";
 import rateLimiter from "@/common/middleware/rateLimiter";
 import requestLogger from "@/common/middleware/requestLogger";
 import { env } from "@/common/utils/envConfig";
-import { giftRouter } from "./api/gift/giftRouter";
-import { sendLogToDiscord } from "./common/utils/logger";
 
 const logger = pino({ name: "server start" });
 const app: Express = express();
@@ -47,14 +46,6 @@ app.use("/video", videoRouter);
 app.use("/member", memberRouter);
 app.use("/banners", bannersRouter);
 app.use("/gift", giftRouter);
-app.get("/", (req, res) => {
-  const logMessage = `Welcome message sent to ${req.ip}.`;
-  const discordWebhookUrl = env.DISCORD_WEBHOOK_URL;
-  sendLogToDiscord(logMessage, "Info", undefined, discordWebhookUrl, "");
-  return res.send({
-    message: "Welcome To JKT48 WEB API",
-  });
-});
 
 // Swagger UI
 app.use(openAPIRouter);
