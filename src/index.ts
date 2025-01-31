@@ -108,25 +108,33 @@ async function initializeBot() {
         await backupDatabase(userId);
       });
 
-      // Load event files
-      type EventFile = (client: Client) => void;
-
       const eventFiles = [
-        `${path.resolve("src", "events")}/showroom-notifier`,
-        `${path.resolve("src", "events")}/idn-notifier`,
-        `${path.resolve("src", "events")}/news-notifier`,
-        `${path.resolve("src", "events")}/birthday-notifier`,
-        `${path.resolve("src", "events")}/schedule-notifier`,
-        `${path.resolve("src", "events")}/events-notifier`,
-        `${path.resolve("src", "events")}/today-schedule-notifier`,
-        `${path.resolve("src", "events")}/fifteen-minutes-notifier`,
-        `${path.resolve("src", "events")}/month-birthday-notifier`,
+        `./events/showroom-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/idn-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/news-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/birthday-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/schedule-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/events-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/today-schedule-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/fifteen-minutes-notifier${env.isProduction ? ".js" : ""}`,
+        `./events/month-birthday-notifier${env.isProduction ? ".js" : ""}`,
       ];
 
       eventFiles.forEach((event) => {
-        import(event).then((module) => {
-          (module.default as EventFile)(client);
-        });
+        import(event)
+          .then((module) => {
+            // Handle both ES modules and CommonJS default exports
+            const handler = typeof module.default === "function" ? module.default : module.default.default;
+
+            if (typeof handler !== "function") {
+              throw new Error(`Event file ${event} did not export a function.`);
+            }
+
+            handler(client);
+          })
+          .catch((error) => {
+            console.error(`Failed to load event ${event}:`, error);
+          });
       });
     });
 
