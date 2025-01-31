@@ -41,10 +41,11 @@ async function sendScheduleNotifications(client) {
   const whitelistedChannels = await getWhitelistedChannels();
   const prioritizedChannels = await getPrioritizedChannels();
 
-  const channelsToNotify = prioritizedChannels.length > 0 ? prioritizedChannels : whitelistedChannels;
+  const channelsToNotify =
+    prioritizedChannels.length > 0 ? prioritizedChannels : whitelistedChannels;
 
   if (!channelsToNotify || channelsToNotify.length === 0) {
-    console.error("No whitelisted channels found.");
+    console.error("❗ No whitelisted channels found.");
     return;
   }
 
@@ -59,7 +60,6 @@ async function sendScheduleNotifications(client) {
     .setTitle("Berikut adalah jadwal event yang akan datang.");
 
   const fields = [];
-
   const nowYear = new Date().getFullYear();
 
   for (const schedule of schedules) {
@@ -98,15 +98,42 @@ async function sendScheduleNotifications(client) {
             await channel.send({embeds: [embed]});
           } catch (error) {
             console.error(
-              `Error sending to channel ${channelId}:`,
+              `❗ Error sending to channel ${channelId}:`,
               error.message
             );
           }
         }
       } catch (error) {
-        console.error(`Failed to fetch channel ${channelId}`, error);
+        console.error(`❗ Failed to fetch channel ${channelId}`, error);
       }
     }
+
+    db.all("SELECT url FROM webhook", async (err, webhookRows) => {
+      if (err) {
+        console.error("❗ Error retrieving webhook URLs:", err.message);
+        return;
+      }
+
+      if (webhookRows.length === 0) {
+        return null;
+      }
+
+      // Send to each webhook
+      for (const webhook of webhookRows) {
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            username: config.webhook.name,
+            avatar_url: config.webhook.avatar,
+          });
+        } catch (error) {
+          console.error(
+            `❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`
+          );
+        }
+      }
+    });
 
     console.log("❗ Jadwal baru telah dikirim.");
   } else {
@@ -117,7 +144,7 @@ async function sendScheduleNotifications(client) {
 async function fetchSchedules() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule/section`
+      `http://localhost:${config.port}/api/schedule/section`
     );
     return response.data;
   } catch (error) {
@@ -129,7 +156,7 @@ async function getWhitelistedChannels() {
   return new Promise((resolve, reject) => {
     db.all("SELECT channel_id FROM whitelist", (err, rows) => {
       if (err) {
-        console.error("Failed to retrieve whitelisted channels", err);
+        console.error("❗ Failed to retrieve whitelisted channels", err);
         return reject(err);
       }
       resolve(rows.map((row) => row.channel_id));
@@ -144,7 +171,7 @@ async function checkEventExists(eventName) {
       [eventName],
       (err, row) => {
         if (err) {
-          console.error("Error checking event existence:", err);
+          console.error("❗ Error checking event existence:", err);
           return reject(err);
         }
         resolve(!!row);
@@ -176,7 +203,7 @@ async function getPrioritizedChannels() {
   return new Promise((resolve, reject) => {
     db.all("SELECT channel_id FROM schedule_id", (err, rows) => {
       if (err) {
-        console.error("Failed to retrieve prioritized channels", err);
+        console.error("❗ Failed to retrieve prioritized channels", err);
         return reject(err);
       }
       resolve(rows.map((row) => row.channel_id));

@@ -7,7 +7,7 @@ const fs = require("fs");
 let membersData = [];
 fs.readFile("src/member.json", "utf8", (err, data) => {
   if (err) {
-    console.error("Error reading member data:", err);
+    console.error("❗ Error reading member data:", err);
     return;
   }
   membersData = JSON.parse(data);
@@ -26,7 +26,7 @@ async function sendScheduleNotifications(client) {
     (!whitelistedChannels || whitelistedChannels.length === 0) &&
     (!scheduleChannels || scheduleChannels.length === 0)
   ) {
-    console.error("No whitelisted channels found.");
+    console.error("❗ No whitelisted channels found.");
     return;
   }
 
@@ -57,14 +57,14 @@ async function sendScheduleNotifications(client) {
 
     const dateParts = dateTime.split(", ");
     if (dateParts.length < 2) {
-      console.error("Invalid date format:", dateTime);
+      console.error("❗ Invalid date format:", dateTime);
       continue;
     }
 
     const dayOfWeek = dateParts[0];
     const dayAndMonthYear = dateParts[1].split(".");
     if (dayAndMonthYear.length < 3) {
-      console.error("Invalid date format:", dateParts[1]);
+      console.error("❗ Invalid date format:", dateParts[1]);
       continue;
     }
 
@@ -145,6 +145,31 @@ async function sendScheduleNotifications(client) {
     }
 
     console.log("❗ Jadwal baru telah berhasil dikirim.");
+
+    // Send to webhooks
+    db.all("SELECT url FROM webhook", async (err, webhookRows) => {
+      if (err) {
+        console.error("❗ Error retrieving webhook URLs:", err.message);
+        return;
+      }
+
+      if (webhookRows.length === 0) {
+        return null;
+      }
+
+      for (const webhook of webhookRows) {
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            username: config.webhook.name,
+            avatar_url: config.webhook.avatar,
+          });
+        } catch (error) {
+          console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`);
+        }
+      }
+    });
   } else {
     return null;
   }

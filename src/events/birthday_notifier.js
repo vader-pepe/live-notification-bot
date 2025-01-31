@@ -8,7 +8,7 @@ const fs = require("fs");
 let membersData = [];
 fs.readFile("src/member.json", "utf8", (err, data) => {
   if (err) {
-    console.error("Error reading member data:", err);
+    console.error("❗ Error reading member data:", err);
     return;
   }
   membersData = JSON.parse(data);
@@ -17,7 +17,7 @@ fs.readFile("src/member.json", "utf8", (err, data) => {
 async function fetchBirthdays() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/birthdays`
+      `http://localhost:${config.port}/api/birthdays`
     );
     return response.data;
   } catch (error) {
@@ -51,7 +51,7 @@ function memberButton(member) {
     .setLabel("Profile Member")
     .setURL(`https://jkt48.com${member.profileLink}`)
     .setStyle(5);
-  
+
   const buttons = new ActionRowBuilder().addComponents(button);
 
   return buttons;
@@ -82,7 +82,7 @@ async function sendBirthdayNotifications(client) {
       `SELECT guild_id, channel_id FROM schedule_id`,
       async (err, scheduleRows) => {
         if (err) {
-          console.error("Error retrieving schedule channels:", err);
+          console.error("❗ Error retrieving schedule channels:", err);
           return;
         }
 
@@ -93,8 +93,8 @@ async function sendBirthdayNotifications(client) {
             const channel = await client.channels.fetch(channel_id);
             if (channel) {
               for (const member of todayBirthdays) {
-                const embed = createBirthdayEmbed(member)
-                const buttons = memberButton(member)
+                const embed = createBirthdayEmbed(member);
+                const buttons = memberButton(member);
                 await channel.send({
                   embeds: [embed],
                   components: [buttons],
@@ -102,11 +102,13 @@ async function sendBirthdayNotifications(client) {
                 handledGuilds.add(guild_id);
               }
             } else {
-              console.log(`❗ Channel dengan ID ${channel_id} tidak ditemukan.`);
+              console.log(
+                `❗ Channel dengan ID ${channel_id} tidak ditemukan.`
+              );
             }
           } catch (error) {
             console.error(
-              `Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+              `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
             );
           }
         }
@@ -115,7 +117,7 @@ async function sendBirthdayNotifications(client) {
           "SELECT channel_id FROM whitelist",
           async (err, whitelistRows) => {
             if (err) {
-              console.error("Error retrieving whitelist channels:", err);
+              console.error("❗ Error retrieving whitelist channels:", err);
               return;
             }
 
@@ -134,7 +136,7 @@ async function sendBirthdayNotifications(client) {
                 }
               } catch (error) {
                 console.error(
-                  `Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+                  `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
                 );
               }
             }
@@ -142,6 +144,37 @@ async function sendBirthdayNotifications(client) {
         );
       }
     );
+  });
+
+  db.all("SELECT url FROM webhook", async (err, webhookRows) => {
+    if (err) {
+      console.error("❗ Error retrieving webhook URLs:", err.message);
+      return;
+    }
+
+    if (webhookRows.length === 0) {
+      return null;
+    }
+
+    for (const webhook of webhookRows) {
+      for (const member of todayBirthdays) {
+        const embed = createBirthdayEmbed(member);
+        const buttons = memberButton(member);
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            components: [buttons.toJSON()],
+            username: config.webhook.name,
+            avatar_url: config.webhook.avatar,
+          });
+        } catch (error) {
+          console.error(
+            `❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`
+          );
+        }
+      }
+    }
   });
 }
 

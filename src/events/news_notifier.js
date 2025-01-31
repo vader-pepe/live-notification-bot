@@ -8,7 +8,7 @@ let isProcessing = false; // Tambahkan flag untuk mencegah proses duplikasi
 async function fetchNews() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/news`
+      `http://localhost:${config.port}/api/news`
     );
     return response.data.berita;
   } catch (error) {
@@ -56,16 +56,13 @@ async function sendNewsNotifications(client) {
     });
 
     if (exists) {
-      console.log(
-        `❗ Berita ${beritaId} sudah ada di database, tidak mengirim ulang.`
-      );
       isProcessing = false; // Reset flag jika berita sudah ada
       return;
     }
 
     // Jika berita belum ada, ambil detail berita
     const newsDetailResponse = await axios.get(
-      `${config.ipAddress}:${config.port}/api/news/detail/${beritaId}`
+      `http://localhost:${config.port}/api/news/detail/${beritaId}`
     );
     const newsDetail = newsDetailResponse.data.data;
 
@@ -90,31 +87,80 @@ async function sendNewsNotifications(client) {
 
     const buttons = new ActionRowBuilder().addComponents(newsButton);
 
-    const allScheduleChannels = await getAllScheduleChannels();
-    const whitelistedChannels = await getWhitelistedChannels();
-
-    const handledGuilds = new Set();
-
-    for (const { guild_id, channel_id } of allScheduleChannels) {
-      const channel = await client.channels.fetch(channel_id);
-      if (channel) {
-        await channel.send({
-          embeds: [embed],
-          components: [buttons],
-        });
-        handledGuilds.add(guild_id);
+    // Send to Discord channels
+    db.all("SELECT guild_id, channel_id FROM schedule_id", async (err, scheduleRows) => {
+      if (err) {
+        console.error("❗ Error retrieving schedule channels:", err);
+        return;
       }
-    }
 
-    for (const channelId of whitelistedChannels) {
-      const channel = await client.channels.fetch(channelId);
-      if (channel && !handledGuilds.has(channel.guild.id)) {
-        await channel.send({
-          embeds: [embed],
-          components: [buttons],
-        });
+      const handledGuilds = new Set();
+
+      for (const { guild_id, channel_id } of scheduleRows) {
+        try {
+          const channel = await client.channels.fetch(channel_id);
+          if (channel) {
+            await channel.send({
+              embeds: [embed],
+              components: [buttons],
+            });
+            handledGuilds.add(guild_id);
+          } else {
+            console.log(`❗ Channel dengan ID ${channel_id} tidak ditemukan.`);
+          }
+        } catch (error) {
+          console.error(`❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`);
+        }
       }
-    }
+
+      // Send to whitelisted channels
+      db.all("SELECT channel_id FROM whitelist", async (err, whitelistRows) => {
+        if (err) {
+          console.error("❗ Error retrieving whitelist channels:", err);
+          return;
+        }
+
+        for (const { channel_id } of whitelistRows) {
+          try {
+            const channel = await client.channels.fetch(channel_id);
+            if (channel && !handledGuilds.has(channel.guild.id)) {
+              await channel.send({
+                embeds: [embed],
+                components: [buttons],
+              });
+            }
+          } catch (error) {
+            console.error(`❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`);
+          }
+        }
+      });
+    });
+
+    // Send to webhooks
+    db.all("SELECT url FROM webhook", async (err, webhookRows) => {
+      if (err) {
+        console.error("❗ Error retrieving webhook URLs:", err.message);
+        return;
+      }
+
+      if (webhookRows.length === 0) {
+        return null;
+      }
+
+      for (const webhook of webhookRows) {
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            components: [buttons.toJSON()],
+            username: config.webhook.name,
+            avatar_url: config.webhook.avatar,
+          });
+        } catch (error) {
+          console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`);
+        }
+      }
+    });
 
     // Simpan berita ke database setelah berhasil dikirim
     db.run(`INSERT INTO news (berita_id) VALUES (?)`, [beritaId], (err) => {

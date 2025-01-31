@@ -41,7 +41,7 @@ function getNickname(name) {
 async function fetchShowSchedule() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule`
+      `http://localhost:${config.port}/api/schedule`
     );
     return response.data;
   } catch (error) {
@@ -52,7 +52,7 @@ async function fetchShowSchedule() {
 async function fetchEventSchedule() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule/section`
+      `http://localhost:${config.port}/api/schedule/section`
     );
     return response.data;
   } catch (error) {
@@ -223,7 +223,7 @@ async function sendTodayCombinedNotifications(client) {
     `SELECT guild_id, channel_id FROM schedule_id`,
     async (err, scheduleRows) => {
       if (err) {
-        console.error("Error retrieving schedule channels:", err);
+        console.error("❗ Error retrieving schedule channels:", err);
         return;
       }
 
@@ -240,39 +240,63 @@ async function sendTodayCombinedNotifications(client) {
           if (channel) {
             await channel.send({ embeds: [embed] });
             handledGuilds.add(guild_id);
+          } else {
+            console.log(`❗ Channel dengan ID ${channel_id} tidak ditemukan.`);
           }
         } catch (error) {
           console.error(
-            `Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+            `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
           );
         }
       }
 
-      db.all("SELECT channel_id FROM whitelist", (err, whitelistRows) => {
+      // Send to whitelisted channels
+      db.all("SELECT channel_id FROM whitelist", async (err, whitelistRows) => {
         if (err) {
-          console.error("Error retrieving whitelist channels:", err);
+          console.error("❗ Error retrieving whitelist channels:", err);
           return;
         }
 
-        whitelistRows.forEach(({ channel_id }) => {
-          client.channels
-            .fetch(channel_id)
-            .then((channel) => {
-              if (channel && !handledGuilds.has(channel.guild.id)) {
-                channel.send({ embeds: [embed] }).catch((error) => {
-                  console.error(
-                    `Gagal mengirim pengumuman ke channel ${channel_id}: ${error}`
-                  );
-                });
-              }
-            })
-            .catch((error) => {
-              console.error(`Error fetching channel ${channel_id}:`, error);
-            });
-        });
+        for (const { channel_id } of whitelistRows) {
+          try {
+            const channel = await client.channels.fetch(channel_id);
+            if (channel && !handledGuilds.has(channel.guild.id)) {
+              await channel.send({ embeds: [embed] });
+            }
+          } catch (error) {
+            console.error(
+              `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+            );
+          }
+        }
       });
     }
   );
+
+  // Send to webhooks
+  db.all("SELECT url FROM webhook", async (err, webhookRows) => {
+    if (err) {
+      console.error("❗ Error retrieving webhook URLs:", err.message);
+      return;
+    }
+
+    if (webhookRows.length === 0) {
+      return null;
+    }
+
+    for (const webhook of webhookRows) {
+      try {
+        await axios.post(webhook.url, {
+          content: null,
+          embeds: [embed.toJSON()],
+          username: config.webhook.name,
+          avatar_url: config.webhook.avatar,
+        });
+      } catch (error) {
+        console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`);
+      }
+    }
+  });
 }
 
 module.exports = (client) => {

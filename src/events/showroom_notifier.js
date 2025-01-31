@@ -1,6 +1,7 @@
 const axios = require("axios");
 const {EmbedBuilder} = require("discord.js");
 const db = require("../db");
+const config = require("../main/config");
 
 async function fetchLiveStreams() {
   try {
@@ -10,7 +11,7 @@ async function fetchLiveStreams() {
     const allLives = response.data.onlives.flatMap((genre) => genre.lives);
     return allLives;
   } catch (error) {
-    console.error("Failed to fetch Showroom");
+    console.error("❗ Failed to fetch Showroom");
     return null;
   }
 }
@@ -191,6 +192,10 @@ async function sendNotifications(client) {
   const liveStreams = filterLiveStreams(streams);
   const uniqueLiveStreams = removeDuplicates(liveStreams);
 
+  // Tentukan newStreams di luar db.serialize()
+  let newStreams = [];
+  let inactiveUsers = []; // Mendefinisikan inactiveUsers di sini
+
   db.serialize(() => {
     db.run(
       `CREATE TABLE IF NOT EXISTS showroom_live (
@@ -205,133 +210,127 @@ async function sendNotifications(client) {
       )`
     );
 
-    db.all(
-      `SELECT live_id, displayName, room_url_key, image_square, image, main_name, startLive FROM showroom_live`,
-      async (err, rows) => {
+    db.all(`SELECT live_id FROM showroom_live`, async (err, rows) => {
+      if (err) {
+        console.error("❗ Failed to retrieve notified live_ids", err);
+        return;
+      }
+
+      const notifiedLiveIds = new Set(rows.map((row) => row.live_id));
+
+      // Simpan newStreams untuk digunakan di luar db.all()
+      newStreams = uniqueLiveStreams.filter(
+        (stream) => !notifiedLiveIds.has(stream.live_id.toString())
+      );
+
+      db.all(`SELECT url FROM webhook`, async (err, webhookRows) => {
         if (err) {
-          console.error("Failed to retrieve notified live_ids", err);
+          console.error("❗ Error retrieving webhook URLs:", err.message);
           return;
         }
 
-        const notifiedLiveIds = new Map(rows.map((row) => [row.live_id, row]));
-        const newStreams = uniqueLiveStreams.filter(
-          (stream) => !notifiedLiveIds.has(stream.live_id.toString())
-        );
+        const webhookUrls = webhookRows.map(row => row.url);
 
-        db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {
-          if (err) {
-            console.error("Failed to retrieve whitelisted channels", err);
-            return;
+        for (const stream of newStreams) {
+          const startLive = parseDateTime(new Date().toISOString());
+          const embed = createEmbed(stream, startLive);
+
+          // Kirim embed ke setiap webhook
+          for (const webhookUrl of webhookUrls) {
+            try {
+              await axios.post(webhookUrl, {
+                content: null,
+                embeds: [embed.toJSON()],
+                username: config.webhook.name,
+                avatar_url: config.webhook.avatar,
+              });
+            } catch (error) {
+              console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhookUrl}: ${error.message}`);
+            }
           }
-          const channelIds = rows.map((row) => row.channel_id);
 
-          let notificationSent = false;
-
-          for (const stream of newStreams) {
-
-            console.log(
-              `🔴 Member sedang live: ${stream.main_name} (Showroom)`
-            );
-
-            const startLive = parseDateTime(new Date().toISOString());
-            const embed = createEmbed(stream, startLive);
-            for (const channelId of channelIds) {
-              try {
-                const channel = await client.channels.fetch(channelId);
-                if (channel) {
-                  db.get(
-                    `SELECT role_id FROM tag_roles WHERE guild_id = ?`,
-                    [channel.guild.id],
-                    async (err, row) => {
-                      if (err) {
-                        console.error("Database error:", err);
-                        return;
-                      }
-
-                      let content = "";
-                      if (row) {
-                        content =
-                          row.role_id === "everyone"
-                            ? "@everyone"
-                            : `<@&${row.role_id}>`;
-                      }
-
-                      try {
-                        await channel.send({content, embeds: [embed]});
-                        notificationSent = true;
-                      } catch (error) {
-                        if (error.code === 50013 || error.code === 50001) {
-                          console.error(
-                            L`Missing permissions for channel ${channelId}. Removing from whitelist.`
-                          );
-                          db.run(
-                            `DELETE FROM whitelist WHERE channel_id = ?`,
-                            channelId
-                          );
-                        } else {
-                          console.error(
-                            `Error sending notification to channel ${channelId}`,
-                            error
-                          );
-                        }
-                      }
-                    }
-                  );
-                }
-              } catch (error) {
-                console.error(`Failed to fetch channel ${channelId}`, error);
+          db.run(
+            `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              stream.live_id,
+              stream.main_name,
+              stream.room_url_key,
+              stream.image_square,
+              stream.image,
+              stream.main_name,
+              startLive,
+            ],
+            (err) => {
+              if (err) {
+                console.error("❗ Failed to insert notified live_id", err);
               }
             }
-
-            db.run(
-              `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-              [
-                stream.live_id,
-                stream.main_name,
-                stream.room_url_key,
-                stream.image_square,
-                stream.image,
-                stream.main_name,
-                startLive,
-              ],
-              (err) => {
-                if (err) {
-                  console.error("Failed to insert notified live_id", err);
-                }
-              }
-            );
-          }
-
-          const endedLiveIds = [...notifiedLiveIds.keys()].filter(
-            (liveId) =>
-              !uniqueLiveStreams.some(
-                (stream) => stream.live_id.toString() === liveId
-              )
           );
+        }
 
-          for (const liveId of endedLiveIds) {
-            const user = notifiedLiveIds.get(liveId);
-            const startLive = user.startLive;
-            const endLive = parseDateTime(new Date().toISOString());
-            const embed = createEndLiveEmbed(user, startLive, endLive);
-            for (const channelId of channelIds) {
-              try {
-                const channel = await client.channels.fetch(channelId);
-                if (channel) {
-                  await channel.send({embeds: [embed]});
-                }
-              } catch (error) {
-                console.error(`Failed to send end live notification:`, error);
+        // Kirim embed end live ke setiap webhook
+        for (const user of inactiveUsers) {
+          const endLiveEmbed = createEndLiveEmbed(user, startLive, endLive);
+
+          for (const webhookUrl of webhookUrls) {
+            try {
+              await axios.post(webhookUrl, {
+                content: null,
+                embeds: [endLiveEmbed.toJSON()],
+                username: config.webhook.name,
+                avatar_url: config.webhook.avatar,
+              });
+            } catch (error) {
+              console.error(`❗ Gagal mengirim end live embed ke webhook ${webhookUrl}: ${error.message}`);
+            }
+          }
+        }
+      });
+
+      db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {
+        if (err) {
+          console.error("❗ Failed to retrieve whitelisted channels", err);
+          return;
+        }
+        const channelIds = rows.map((row) => row.channel_id);
+
+        for (const stream of newStreams) {
+          console.log(`🔴 Member sedang live: ${stream.main_name} (Showroom)`);
+
+          const startLive = parseDateTime(new Date().toISOString());
+          const embed = createEmbed(stream, startLive);
+
+          for (const channelId of channelIds) {
+            try {
+              const channel = await client.channels.fetch(channelId);
+              if (channel) {
+                await channel.send({embeds: [embed]});
+              }
+            } catch (error) {
+              console.error(`❗ Failed to send notification:`, error);
+            }
+          }
+
+          db.run(
+            `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              stream.live_id,
+              stream.main_name,
+              stream.room_url_key,
+              stream.image_square,
+              stream.image,
+              stream.main_name,
+              startLive,
+            ],
+            (err) => {
+              if (err) {
+                console.error("❗ Failed to insert notified live_id", err);
               }
             }
-            db.run("DELETE FROM showroom_live WHERE live_id = ?", liveId);
-            console.log(
-              `🔴 Live Member Telah Berakhir: ${user.main_name} (Showroom)`
-            );
-          }
-        });
-      }
-    );
+          );
+        }
+      });
+    });
   });
 }
 
