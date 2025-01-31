@@ -10,7 +10,7 @@ import db from "@/common/utils/db";
 import { env } from "@/common/utils/envConfig";
 
 let membersData: Member[] = [];
-fs.readFile("src/member.json", "utf8", (err, data) => {
+fs.readFile("./member.json", "utf8", (err, data) => {
   if (err) {
     console.error("❗ Error reading member data:", err);
     return;

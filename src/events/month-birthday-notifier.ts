@@ -8,7 +8,7 @@ import { CONFIG } from "@/common/utils/constants";
 import db from "@/common/utils/db";
 
 let membersData: Member[] = [];
-readFile("src/member.json", "utf8", (err, data) => {
+readFile("./member.json", "utf8", (err, data) => {
   if (err) {
     console.error("❗ Error reading member data:", err);
     return;

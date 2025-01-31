@@ -8,7 +8,7 @@ import axios from "axios";
 import { type Client, EmbedBuilder, TextChannel } from "discord.js";
 
 let membersData: Member[] = [];
-readFile("src/member.json", "utf8", (err, data) => {
+readFile("./member.json", "utf8", (err, data) => {
   if (err) {
     console.error("Error reading member data:", err);
     return;

@@ -48,7 +48,8 @@ const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Juni", "Juli", "Agt", "S
 export const data = new SlashCommandBuilder().setName("schedule").setDescription("Menampilkan jadwal show JKT48");
 
 let membersData: Member[] = [];
-readFile("src/member.json", "utf8", (err, data) => {
+// TODO: bugged on development environtment
+readFile("./member.json", "utf8", (err, data) => {
   if (err) {
     console.error("Error reading member data:", err);
     return;

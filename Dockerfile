@@ -1,22 +1,52 @@
-FROM node:22.13.1-slim
+# base
+FROM node:22.13.1-slim AS base
 
-# Create app directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
 COPY package*.json ./
 
-# Install app dependencies
-RUN npm ci
+RUN npm i -g husky
 
-# Bundle app source
+RUN npm install --omit=dev
+
 COPY . .
 
-# Build the TypeScript files
+# for lint
+
+FROM base AS linter
+
+WORKDIR /usr/src/app
+
+RUN npm i -g biome
+
+RUN npm run lint
+
+# for build
+
+FROM linter AS builder
+
+WORKDIR /usr/src/app
+
+RUN npm i -g tsup
+
+RUN npm i -g typescript
+
 RUN npm run build
 
-# Expose port 8080
-EXPOSE 8080
+# for production
 
-# Start the app
-CMD npm run start
+FROM node:22-alpine
+
+WORKDIR /usr/src/app
+
+COPY package*.json ./
+
+RUN npm i -g husky
+
+RUN npm install --omit=dev
+
+COPY --from=builder /usr/src/app/dist ./
+
+EXPOSE 3000
+
+CMD ["node","index.js"]
