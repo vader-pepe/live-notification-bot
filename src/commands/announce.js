@@ -14,7 +14,7 @@ const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("message")
-      .setDescription("Pesan pengumuman yang akan dikirim")
+      .setDescription("Pesan pengumuman yang akan dikirim (pisahkan dengan | untuk baris baru)")
       .setRequired(true)
   );
 
@@ -26,12 +26,12 @@ async function run({interaction, client}) {
     });
   }
 
-  const announcementMessage = interaction.options.getString("message");
+  const announcementMessage = interaction.options.getString("message").split('|').join('\n');
 
   const embed = new EmbedBuilder()
-    .setTitle("Pengumuman")
+    .setTitle("Pengumuman Baru")
     .setDescription(announcementMessage)
-    .setColor("#00ff00")
+    .setColor("#ff0000")
     .setFooter({text: "JKT48 Live Notification"});
 
   await interaction.deferReply({ephemeral: true});
