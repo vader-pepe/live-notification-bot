@@ -5,6 +5,7 @@ import schedule from "node-schedule";
 
 import type { Member } from "@/commands/schedule";
 import type { Schedule } from "@/common/utils/calendar";
+import { CONFIG } from "@/common/utils/constants";
 import db from "@/common/utils/db";
 import { env } from "@/common/utils/envConfig";
 
@@ -128,7 +129,7 @@ async function sendFifteenMinuteNotifications(client: Client) {
       }
     }
 
-    db.all("SELECT channel_id FROM whitelist", async (err, whitelistRows: any) => {
+    db.all("SELECT channel_id FROM whitelist", async (err, whitelistRows: any[]) => {
       if (err) {
         console.error("Error retrieving whitelist channels:", err);
         return;
@@ -143,6 +144,29 @@ async function sendFifteenMinuteNotifications(client: Client) {
         } catch (error) {
           const err = error as Error;
           console.error(`Gagal mengirim pengumuman ke channel ${channel_id}: ${err.message}`);
+        }
+      }
+    });
+
+    db.all("SELECT url FROM webhook", async (err, webhookRows: any[]) => {
+      if (err) {
+        console.error("❗ Error retrieving webhook URLs:", err.message);
+        return;
+      }
+      if (webhookRows.length === 0) {
+        return null;
+      }
+      for (const webhook of webhookRows) {
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            username: CONFIG.webhook.name,
+            avatar_url: CONFIG.webhook.avatar,
+          });
+        } catch (error) {
+          const err = error as Error;
+          console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${err.message}`);
         }
       }
     });

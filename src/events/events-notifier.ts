@@ -1,6 +1,7 @@
 import { readFile } from "node:fs";
 import type { Member } from "@/commands/schedule";
 import type { ParsedSchedule } from "@/common/utils/calendar";
+import { CONFIG } from "@/common/utils/constants";
 import db from "@/common/utils/db";
 import { env } from "@/common/utils/envConfig";
 import axios from "axios";
@@ -86,6 +87,30 @@ async function sendScheduleNotifications(client: Client) {
         console.error(`Failed to fetch channel ${channelId}`, error);
       }
     }
+
+    db.all("SELECT url FROM webhook", async (err, webhookRows: any[]) => {
+      if (err) {
+        console.error("❗ Error retrieving webhook URLs:", err.message);
+        return;
+      }
+      if (webhookRows.length === 0) {
+        return null;
+      }
+      // Send to each webhook
+      for (const webhook of webhookRows) {
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            username: CONFIG.webhook.name,
+            avatar_url: CONFIG.webhook.avatar,
+          });
+        } catch (error) {
+          const err = error as Error;
+          console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${err.message}`);
+        }
+      }
+    });
 
     console.log("❗ Jadwal baru telah dikirim.");
   } else {

@@ -1,151 +1,174 @@
 import fs from "node:fs";
-import db from "@/common/utils/db";
-import { env } from "@/common/utils/envConfig";
 import axios from "axios";
-import { ActionRowBuilder, ButtonBuilder, ChannelType, type Client, EmbedBuilder } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ChannelType, type Client, EmbedBuilder, TextChannel } from "discord.js";
 import schedule from "node-schedule";
 
-// Define interfaces for your data structures
-interface Member {
-  name: string;
-  birthday: string;
-  profileLink: string;
-}
+import type { Member } from "@/commands/schedule";
+import type { Birthday } from "@/common/utils/birthday";
+import { CONFIG } from "@/common/utils/constants";
+import db from "@/common/utils/db";
+import { env } from "@/common/utils/envConfig";
 
-interface MemberData {
-  name: string;
-  img_alt: string;
-}
+let membersData: Member[] = [];
+fs.readFile("src/member.json", "utf8", (err, data) => {
+  if (err) {
+    console.error("❗ Error reading member data:", err);
+    return;
+  }
+  membersData = JSON.parse(data);
+});
 
-// Initialize membersData with proper typing
-let membersData: MemberData[] = [];
-
-// Read member data synchronously with proper error handling
-try {
-  const data = fs.readFileSync("src/member.json", "utf8");
-  membersData = JSON.parse(data) as MemberData[];
-} catch (err) {
-  console.error("Error reading member data:", err);
-}
-
-async function fetchBirthdays(): Promise<Member[]> {
+async function fetchBirthdays() {
   try {
-    const response = await axios.get<Member[]>(`http://${env.HOST}:${env.PORT}/birthdays`);
+    const response = await axios.get<Birthday[]>(`http://${env.HOST}:${env.PORT}/birthdays`);
     return response.data;
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      console.error("Axios error fetching birthdays:", error.message);
-    }
     return [];
   }
 }
 
-function createBirthdayEmbed(member: Member): EmbedBuilder {
+function createBirthdayEmbed(member: Birthday) {
   const memberData = membersData.find((m) => m.name === member.name);
-  const birthYear = Number.parseInt(member.birthday.split(" ").pop() || "0", 10);
+  const imgAlt = memberData ? memberData.img_alt : "";
+
+  const birthYear = Number(member.birthday.split(" ").pop() || 0);
   const currentYear = new Date().getFullYear();
   const age = currentYear - birthYear;
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setTitle("Ada Member Yang Sedang Ulang Tahun Hari Ini!!")
-    .setImage(memberData?.img_alt || "")
+    .setImage(imgAlt)
     .setDescription(
-      `Selamat Ulang Tahun **${member.name}**!! 🎉🎉\n` +
-        `Sedang berulang tahun ke-**${age}**\n\n` +
-        `**🎂 Nama:** ${member.name}\n` +
-        `**📅 Birthdate:** ${member.birthday}\n` +
-        `**🎉 Umur:** ${age}\n\n` +
-        "Happy birthdayy 🎉🎉\nWish You All The Best!!",
+      `Selamat Ulang Tahun **${member.name}**!! 🎉🎉\nSedang berulang tahun ke-**${age}**\n\n**🎂 Nama:** ${member.name}\n**📅 Birthdate:** ${member.birthday}\n**🎉 Umur:** ${age}\n\nHappy birthdayy 🎉🎉\nWish You All The Best!!`,
     )
     .setColor("#ff0000")
     .setFooter({
       text: "Birthday Announcement JKT48 | JKT48 Live Notification",
     });
+  return embed;
 }
 
-function memberButton(member: Member): ActionRowBuilder<ButtonBuilder> {
+function memberButton(member: Birthday) {
   const button = new ButtonBuilder()
     .setLabel("Profile Member")
     .setURL(`https://jkt48.com${member.profileLink}`)
     .setStyle(5);
 
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+  const buttons = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
+
+  return buttons;
 }
 
-async function sendBirthdayNotifications(client: Client<boolean>): Promise<void> {
+async function sendBirthdayNotifications(client: Client) {
   const birthdays = await fetchBirthdays();
   const today = new Date();
-  const todayDayMonth = `${today.getDate()} ${today.toLocaleString("id-ID", { month: "long" })}`;
+  const todayDayMonth = `${Number.parseInt(
+    `${today.getDate()}`,
+    10,
+  )} ${today.toLocaleString("id-ID", { month: "long" })}`;
 
   const todayBirthdays = birthdays.filter((member) => {
-    const [day, month] = member.birthday.split(" ");
-    return `${Number.parseInt(day, 10)} ${month}` === todayDayMonth;
+    const birthdayParts = member.birthday.split(" ");
+    const birthdayDayMonth = `${Number.parseInt(birthdayParts[0], 10)} ${birthdayParts[1]}`;
+    return birthdayDayMonth === todayDayMonth;
   });
 
-  if (todayBirthdays.length === 0) return;
+  if (todayBirthdays.length === 0) {
+    return null;
+  }
 
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.all<{ guild_id: string; channel_id: string }>(
-        "SELECT guild_id, channel_id FROM schedule_id",
-        async (err, scheduleRows) => {
-          if (err) return reject(err);
+  db.serialize(() => {
+    db.all("SELECT guild_id, channel_id FROM schedule_id", async (err, scheduleRows: any[]) => {
+      if (err) {
+        console.error("❗ Error retrieving schedule channels:", err);
+        return;
+      }
 
-          const handledGuilds = new Set<string>();
+      const handledGuilds = new Set();
 
+      for (const { guild_id, channel_id } of scheduleRows) {
+        try {
+          const channel = await client.channels.fetch(channel_id);
+          if (channel && channel instanceof TextChannel) {
+            for (const member of todayBirthdays) {
+              const embed = createBirthdayEmbed(member);
+              const buttons = memberButton(member);
+              await channel.send({
+                embeds: [embed],
+                components: [buttons],
+              });
+              handledGuilds.add(guild_id);
+            }
+          } else {
+            console.log(`❗ Channel dengan ID ${channel_id} tidak ditemukan.`);
+          }
+        } catch (error) {
+          const err = error as Error;
+          console.error(`❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${err.message}`);
+        }
+      }
+
+      db.all("SELECT channel_id FROM whitelist", async (err, whitelistRows: any[]) => {
+        if (err) {
+          console.error("❗ Error retrieving whitelist channels:", err);
+          return;
+        }
+
+        for (const { channel_id } of whitelistRows) {
           try {
-            // Process scheduled channels
-            for (const { guild_id, channel_id } of scheduleRows) {
-              try {
-                const channel = await client.channels.fetch(channel_id);
-                if (channel?.type === ChannelType.GuildText) {
-                  for (const member of todayBirthdays) {
-                    await channel.send({
-                      embeds: [createBirthdayEmbed(member)],
-                      components: [memberButton(member)],
-                    });
-                    handledGuilds.add(guild_id);
-                  }
-                }
-              } catch (error) {
-                console.error(`Error processing channel ${channel_id}:`, error);
+            const channel = await client.channels.fetch(channel_id);
+            if (channel && channel instanceof TextChannel && !handledGuilds.has(channel.guild.id)) {
+              for (const member of todayBirthdays) {
+                const embed = createBirthdayEmbed(member);
+                const buttons = memberButton(member);
+                await channel.send({
+                  embeds: [embed],
+                  components: [buttons],
+                });
               }
             }
-
-            // Process whitelist channels
-            db.all<{ channel_id: string }>("SELECT channel_id FROM whitelist", async (err, whitelistRows) => {
-              if (err) return reject(err);
-
-              for (const { channel_id } of whitelistRows) {
-                try {
-                  const channel = await client.channels.fetch(channel_id);
-                  if (channel?.type === ChannelType.GuildText && !handledGuilds.has(channel.guild.id)) {
-                    for (const member of todayBirthdays) {
-                      await channel.send({
-                        embeds: [createBirthdayEmbed(member)],
-                        components: [memberButton(member)],
-                      });
-                    }
-                  }
-                } catch (error) {
-                  console.error(`Error processing whitelist channel ${channel_id}:`, error);
-                }
-              }
-              resolve();
-            });
           } catch (error) {
-            reject(error);
+            const err = error as Error;
+            console.error(`❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${err.message}`);
           }
-        },
-      );
+        }
+      });
     });
+  });
+
+  db.all("SELECT url FROM webhook", async (err, webhookRows: any[]) => {
+    if (err) {
+      console.error("❗ Error retrieving webhook URLs:", err.message);
+      return;
+    }
+
+    if (webhookRows.length === 0) {
+      return null;
+    }
+
+    for (const webhook of webhookRows) {
+      for (const member of todayBirthdays) {
+        const embed = createBirthdayEmbed(member);
+        const buttons = memberButton(member);
+        try {
+          await axios.post(webhook.url, {
+            content: null,
+            embeds: [embed.toJSON()],
+            components: [buttons.toJSON()],
+            username: CONFIG.webhook.name,
+            avatar_url: CONFIG.webhook.avatar,
+          });
+        } catch (error) {
+          const err = error as Error;
+          console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${err.message}`);
+        }
+      }
+    }
   });
 }
 
-export default function (client: Client<boolean>): void {
-  schedule.scheduleJob("0 0 * * *", async () => {
-    await sendBirthdayNotifications(client).catch((error) => {
-      console.error("Error in birthday notifications:", error);
-    });
+export default function (client: Client) {
+  schedule.scheduleJob("0 0 * * *", () => {
+    sendBirthdayNotifications(client);
   });
 }

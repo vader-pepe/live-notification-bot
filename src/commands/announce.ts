@@ -10,7 +10,10 @@ export const data = new SlashCommandBuilder()
   .setName("announce")
   .setDescription("Mengirim pengumuman ke semua channel yang terwhitelist")
   .addStringOption((option) =>
-    option.setName("message").setDescription("Pesan pengumuman yang akan dikirim").setRequired(true),
+    option
+      .setName("message")
+      .setDescription("Pesan pengumuman yang akan dikirim (pisahkan dengan | untuk baris baru)")
+      .setRequired(true),
   );
 
 export async function run({ interaction, client }: SlashCommandProps) {
@@ -21,18 +24,18 @@ export async function run({ interaction, client }: SlashCommandProps) {
     });
   }
 
-  const announcementMessage = interaction.options.getString("message");
+  const announcementMessage = (interaction.options.getString("message") || "").split("|").join("\n");
 
   const embed = new EmbedBuilder()
     .setTitle("Pengumuman")
     .setDescription(announcementMessage)
-    .setColor("#00ff00")
+    .setColor("#ff0000")
     .setFooter({ text: "JKT48 Live Notification" });
 
   await interaction.deferReply({ ephemeral: true });
 
   // TODO: enforce type with sqlite
-  db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {
+  db.all("SELECT channel_id FROM whitelist", async (err, rows) => {
     if (err) {
       console.error("Failed to retrieve whitelisted channels", err);
       return interaction.editReply({

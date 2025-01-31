@@ -5,9 +5,7 @@ import {
   ButtonStyle,
   EmbedBuilder,
   type MessageComponentInteraction,
-  PartialGroupDMChannel,
   SlashCommandBuilder,
-  TextBasedChannel,
   TextChannel,
 } from "discord.js";
 
@@ -23,14 +21,14 @@ export async function run({ interaction, client }: SlashCommandProps) {
     .setTitle("Help for JKT48 live notifications")
     .setDescription("List of commands:")
     .addFields(
-      {
-        name: "/whitelist",
-        value: "Menambahkan whitelist channel untuk live notifications.",
-      },
       { name: "/ping", value: "Ping the bot" },
       {
-        name: "/removewhitelist",
-        value: "Menghapus whitelist channel untuk live notifications.",
+        name: "/whitelist",
+        value: "Menambahkan whitelist channel untuk live notifikasi.",
+      },
+      {
+        name: "/unwhitelist",
+        value: "Menghapus whitelist channel untuk live notifikasi.",
       },
       {
         name: "/tagrole",
@@ -39,6 +37,42 @@ export async function run({ interaction, client }: SlashCommandProps) {
       {
         name: "/removetagrole",
         value: "Menghapus tag role saat notifikasi member sedang live.",
+      },
+      {
+        name: "/schedulewhitelist",
+        value: "Menambahkan whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/unwhitelist_schedule",
+        value: "Menghapus whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/webhook",
+        value: "Menambahkan webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/removewebhook",
+        value: "Menghapus webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/birthday",
+        value: "Menampilkan data ulang tahun member JKT48",
+      },
+      {
+        name: "/events",
+        value: "Menampilkan jadwal event offair yang akan datang",
+      },
+      {
+        name: "/nowlive",
+        value: "Menampilkan member yang sedang live",
+      },
+      {
+        name: "/schedule",
+        value: "Menampilkan jadwal show theater JKT48",
+      },
+      {
+        name: "/donate",
+        value: "Donasi untuk kelangsungan bot JKT48 live notifications",
       },
       {
         name: "Butuh Bantuan?",
@@ -56,14 +90,14 @@ export async function run({ interaction, client }: SlashCommandProps) {
     .setTitle("Help for JKT48 live notifications")
     .setDescription("List of commands:")
     .addFields(
-      {
-        name: "/whitelist",
-        value: "Menambahkan whitelist channel untuk live notifications.",
-      },
       { name: "/ping", value: "Ping the bot" },
       {
-        name: "/removewhitelist",
-        value: "Menghapus whitelist channel untuk live notifications.",
+        name: "/whitelist",
+        value: "Menambahkan whitelist channel untuk live notifikasi.",
+      },
+      {
+        name: "/unwhitelist",
+        value: "Menghapus whitelist channel untuk live notifikasi.",
       },
       {
         name: "/tagrole",
@@ -72,6 +106,42 @@ export async function run({ interaction, client }: SlashCommandProps) {
       {
         name: "/removetagrole",
         value: "Menghapus tag role saat notifikasi member sedang live.",
+      },
+      {
+        name: "/schedulewhitelist",
+        value: "Menambahkan whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/unwhitelist_schedule",
+        value: "Menghapus whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/webhook",
+        value: "Menambahkan webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/removewebhook",
+        value: "Menghapus webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/birthday",
+        value: "Menampilkan data ulang tahun member JKT48",
+      },
+      {
+        name: "/events",
+        value: "Menampilkan jadwal event offair yang akan datang",
+      },
+      {
+        name: "/nowlive",
+        value: "Menampilkan member yang sedang live",
+      },
+      {
+        name: "/schedule",
+        value: "Menampilkan jadwal show theater JKT48",
+      },
+      {
+        name: "/donate",
+        value: "Donasi untuk kelangsungan bot JKT48 live notifications",
       },
       {
         name: "Butuh Bantuan?",
@@ -115,10 +185,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
       .setLabel("Vote Bot")
       .setURL("https://top.gg/bot/1253053660242514022/vote")
       .setStyle(ButtonStyle.Link),
-    new ButtonBuilder()
-      .setLabel("Donate me")
-      .setURL("https://saweria.co/Ryuu48") // link saweria ga diubah kok bro :)
-      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder().setLabel("Donate me").setURL("https://saweria.co/Ryuu48").setStyle(ButtonStyle.Link),
   );
 
   await interaction.reply({
@@ -127,15 +194,14 @@ export async function run({ interaction, client }: SlashCommandProps) {
     ephemeral: true,
   });
 
-  const filter = (i: MessageComponentInteraction): boolean => i.customId === "commands" || i.customId === "permissions";
+  const filter = (i: MessageComponentInteraction) => i.customId === "commands" || i.customId === "permissions";
   const channel = interaction.channel;
   if (channel && channel instanceof TextChannel) {
     const collector = channel.createMessageComponentCollector({
       filter,
       time: 60000,
     });
-
-    collector.on("collect", async (i: MessageComponentInteraction) => {
+    collector.on("collect", async (i) => {
       if (i.customId === "commands") {
         await i.update({ embeds: [commandsEmbed], components: [row] });
       } else if (i.customId === "permissions") {
