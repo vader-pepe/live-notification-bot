@@ -5,9 +5,9 @@ import { ActivityType, AttachmentBuilder, Client, type Snowflake } from "discord
 import schedule from "node-schedule";
 
 import antiCrash from "@/common/utils/anti-crash";
+import { handleSelect } from "@/common/utils/bot";
 import { env } from "@/common/utils/envConfig";
 import { app, logger } from "@/server";
-import { handleSelect } from "./common/utils/bot";
 
 const server = app.listen(env.PORT, () => {
   const { NODE_ENV, HOST, PORT } = env;
@@ -112,15 +112,15 @@ async function initializeBot() {
       type EventFile = (client: Client) => void;
 
       const eventFiles = [
-        // "./events/showroom_notifier",
-        // "./events/idn_notifier",
-        // "./events/news_notifier",
-        path.resolve("src", "events") + "/birthday-notifier",
-        // "./events/schedule_notifier",
-        // "./events/events_notifier",
-        // "./events/today_schedule_notifier",
-        // "./events/fifteenminute_notifier",
-        // "./events/monthBirthday_notifier",
+        `${path.resolve("src", "events")}/showroom-notifier`,
+        `${path.resolve("src", "events")}/idn-notifier`,
+        `${path.resolve("src", "events")}/news-notifier`,
+        `${path.resolve("src", "events")}/birthday-notifier`,
+        `${path.resolve("src", "events")}/schedule-notifier`,
+        `${path.resolve("src", "events")}/events-notifier`,
+        `${path.resolve("src", "events")}/today-schedule-notifier`,
+        `${path.resolve("src", "events")}/fifteen-minutes-notifier`,
+        `${path.resolve("src", "events")}/month-birthday-notifier`,
       ];
 
       eventFiles.forEach((event) => {

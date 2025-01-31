@@ -1,6 +1,8 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
+export type ParsedNews = ReturnType<typeof parseNewsData>;
+
 interface News {
   badge_url?: string | undefined;
   waktu: string;

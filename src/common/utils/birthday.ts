@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-interface Birthday {
+export interface Birthday {
   profileLink?: string | undefined;
   imgSrc?: string | undefined;
   name: string;

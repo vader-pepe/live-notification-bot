@@ -5,7 +5,7 @@ import axios from "axios";
 import type { SlashCommandProps } from "commandkit";
 import { EmbedBuilder, SlashCommandBuilder } from "discord.js";
 
-export interface Members {
+export interface Member {
   _id?: string;
   name: string;
   nicknames: string[];
@@ -47,7 +47,7 @@ const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Juni", "Juli", "Agt", "S
 
 export const data = new SlashCommandBuilder().setName("schedule").setDescription("Menampilkan jadwal show JKT48");
 
-let membersData: Members[] = [];
+let membersData: Member[] = [];
 readFile("src/member.json", "utf8", (err, data) => {
   if (err) {
     console.error("Error reading member data:", err);

@@ -16,7 +16,8 @@
       "style": {
         "noUselessElse": "off",
         "noNonNullAssertion": "off",
-        "useDefaultParameterLast": "off"
+        "useDefaultParameterLast": "off",
+        "useTemplate": "off"
       },
       "complexity": {
         "noForEach": "off"
