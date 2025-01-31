@@ -192,10 +192,6 @@ async function sendNotifications(client) {
   const liveStreams = filterLiveStreams(streams);
   const uniqueLiveStreams = removeDuplicates(liveStreams);
 
-  // Tentukan newStreams di luar db.serialize()
-  let newStreams = [];
-  let inactiveUsers = []; // Mendefinisikan inactiveUsers di sini
-
   db.serialize(() => {
     db.run(
       `CREATE TABLE IF NOT EXISTS showroom_live (
@@ -210,18 +206,20 @@ async function sendNotifications(client) {
       )`
     );
 
-    db.all(`SELECT live_id FROM showroom_live`, async (err, rows) => {
+    db.all(`SELECT live_id FROM showroom_live`, (err, rows) => {
       if (err) {
         console.error("❗ Failed to retrieve notified live_ids", err);
         return;
       }
 
-      const notifiedLiveIds = new Set(rows.map((row) => row.live_id));
+      const notifiedLiveIdsFromDb = new Set(rows.map((row) => row.live_id));
 
-      // Simpan newStreams untuk digunakan di luar db.all()
-      newStreams = uniqueLiveStreams.filter(
-        (stream) => !notifiedLiveIds.has(stream.live_id.toString())
+      // Hanya ambil live_id yang belum ada di database
+      const newStreams = uniqueLiveStreams.filter(
+        (stream) => !notifiedLiveIdsFromDb.has(stream.live_id.toString())
       );
+
+      if (newStreams.length === 0) return; // Tidak ada yang perlu dikirim
 
       db.all(`SELECT url FROM webhook`, async (err, webhookRows) => {
         if (err) {
@@ -229,9 +227,11 @@ async function sendNotifications(client) {
           return;
         }
 
-        const webhookUrls = webhookRows.map(row => row.url);
+        const webhookUrls = webhookRows.map((row) => row.url);
 
         for (const stream of newStreams) {
+          console.log(`🔴 Member sedang live: ${stream.main_name} (Showroom)`);
+
           const startLive = parseDateTime(new Date().toISOString());
           const embed = createEmbed(stream, startLive);
 
@@ -245,12 +245,15 @@ async function sendNotifications(client) {
                 avatar_url: config.webhook.avatar,
               });
             } catch (error) {
-              console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhookUrl}: ${error.message}`);
+              console.error(
+                `❗ Gagal mengirim notifikasi ke webhook ${webhookUrl}: ${error.message}`
+              );
             }
           }
 
+          // Simpan live_id ke database jika belum ada
           db.run(
-            `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            `INSERT OR IGNORE INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
               stream.live_id,
               stream.main_name,
@@ -267,24 +270,6 @@ async function sendNotifications(client) {
             }
           );
         }
-
-        // Kirim embed end live ke setiap webhook
-        for (const user of inactiveUsers) {
-          const endLiveEmbed = createEndLiveEmbed(user, startLive, endLive);
-
-          for (const webhookUrl of webhookUrls) {
-            try {
-              await axios.post(webhookUrl, {
-                content: null,
-                embeds: [endLiveEmbed.toJSON()],
-                username: config.webhook.name,
-                avatar_url: config.webhook.avatar,
-              });
-            } catch (error) {
-              console.error(`❗ Gagal mengirim end live embed ke webhook ${webhookUrl}: ${error.message}`);
-            }
-          }
-        }
       });
 
       db.all(`SELECT channel_id FROM whitelist`, async (err, rows) => {
@@ -292,11 +277,10 @@ async function sendNotifications(client) {
           console.error("❗ Failed to retrieve whitelisted channels", err);
           return;
         }
+
         const channelIds = rows.map((row) => row.channel_id);
 
         for (const stream of newStreams) {
-          console.log(`🔴 Member sedang live: ${stream.main_name} (Showroom)`);
-
           const startLive = parseDateTime(new Date().toISOString());
           const embed = createEmbed(stream, startLive);
 
@@ -310,29 +294,12 @@ async function sendNotifications(client) {
               console.error(`❗ Failed to send notification:`, error);
             }
           }
-
-          db.run(
-            `INSERT INTO showroom_live (live_id, displayName, room_url_key, image_square, image, main_name, startLive) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [
-              stream.live_id,
-              stream.main_name,
-              stream.room_url_key,
-              stream.image_square,
-              stream.image,
-              stream.main_name,
-              startLive,
-            ],
-            (err) => {
-              if (err) {
-                console.error("❗ Failed to insert notified live_id", err);
-              }
-            }
-          );
         }
       });
     });
   });
 }
+
 
 module.exports = (client) => {
   setInterval(() => sendNotifications(client), 30000);
