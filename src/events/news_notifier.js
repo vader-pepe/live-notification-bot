@@ -8,7 +8,7 @@ let isProcessing = false; // Tambahkan flag untuk mencegah proses duplikasi
 async function fetchNews() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/news`
+      `${config.ipAddress}:${config.port}/api/news`
     );
     return response.data.berita;
   } catch (error) {
@@ -62,7 +62,7 @@ async function sendNewsNotifications(client) {
 
     // Jika berita belum ada, ambil detail berita
     const newsDetailResponse = await axios.get(
-      `http://localhost:${config.port}/api/news/detail/${beritaId}`
+      `${config.ipAddress}:${config.port}/api/news/detail/${beritaId}`
     );
     const newsDetail = newsDetailResponse.data.data;
 

@@ -22,7 +22,7 @@ function getNickname(name) {
 async function fetchShowSchedule() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/schedule`
+      `${config.ipAddress}:${config.port}/api/schedule`
     );
     return response.data;
   } catch (error) {
