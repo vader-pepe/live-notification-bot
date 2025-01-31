@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-interface ScheduleData {
+export interface Schedule {
   showInfo: string;
   setlist: string;
   members: string[]; // Daftar anggota tanpa style
@@ -14,7 +14,7 @@ interface Event {
   eventUrl?: string | undefined;
 }
 
-interface ParsedSchedule {
+export interface ParsedSchedule {
   tanggal: string;
   hari: string;
   bulan: string;
@@ -55,11 +55,11 @@ export const getSchedule = async () => {
   }
 };
 
-export const parseData = (html: string) => {
+export const parseScheduleData = (html: string) => {
   const $ = cheerio.load(html);
 
   const table = $(".table");
-  const scheduleData: ScheduleData[] = [];
+  const scheduleData: Schedule[] = [];
 
   table.find("tbody tr").each((index, element) => {
     const showInfoFull = $(element).find("td:nth-child(1)").text().trim();

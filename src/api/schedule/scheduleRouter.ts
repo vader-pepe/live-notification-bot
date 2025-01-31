@@ -1,4 +1,9 @@
-import { fetchScheduleSectionData, getSchedule, parseData, parseScheduleSectionData } from "@/common/utils/calendar";
+import {
+  fetchScheduleSectionData,
+  getSchedule,
+  parseScheduleData,
+  parseScheduleSectionData,
+} from "@/common/utils/calendar";
 import { env } from "@/common/utils/envConfig";
 import { sendLogToDiscord } from "@/common/utils/logger";
 import { OpenAPIRegistry } from "@asteasolutions/zod-to-openapi";
@@ -11,7 +16,7 @@ scheduleRouter.get("/", async (req, res) => {
   try {
     const htmlData = await getSchedule();
     if (htmlData) {
-      const scheduleData = parseData(htmlData);
+      const scheduleData = parseScheduleData(htmlData);
       return res.json(scheduleData);
     }
     return res.status(500).json({ error: "Internal Server Error" });
