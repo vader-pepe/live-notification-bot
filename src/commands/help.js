@@ -21,14 +21,14 @@ async function run({interaction, client}) {
     .setTitle("Help for JKT48 live notifications")
     .setDescription("List of commands:")
     .addFields(
-      {
-        name: "/whitelist",
-        value: "Menambahkan whitelist channel untuk live notifications.",
-      },
       {name: "/ping", value: "Ping the bot"},
       {
-        name: "/removewhitelist",
-        value: "Menghapus whitelist channel untuk live notifications.",
+        name: "/whitelist",
+        value: "Menambahkan whitelist channel untuk live notifikasi.",
+      },
+      {
+        name: "/unwhitelist",
+        value: "Menghapus whitelist channel untuk live notifikasi.",
       },
       {
         name: "/tagrole",
@@ -37,6 +37,46 @@ async function run({interaction, client}) {
       {
         name: "/removetagrole",
         value: "Menghapus tag role saat notifikasi member sedang live.",
+      },
+      {
+        name: "/schedulewhitelist",
+        value:
+          "Menambahkan whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/unwhitelist_schedule",
+        value:
+          "Menghapus whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/webhook",
+        value:
+          "Menambahkan webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/removewebhook",
+        value:
+          "Menghapus webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/birthday",
+        value: "Menampilkan data ulang tahun member JKT48",
+      },
+      {
+        name: "/events",
+        value: "Menampilkan jadwal event offair yang akan datang",
+      },
+      {
+        name: "/nowlive",
+        value: "Menampilkan member yang sedang live",
+      },
+      {
+        name: "/schedule",
+        value: "Menampilkan jadwal show theater JKT48",
+      },
+      {
+        name: "/donate",
+        value: "Donasi untuk kelangsungan bot JKT48 live notifications",
       },
       {
         name: "Butuh Bantuan?",
@@ -54,14 +94,14 @@ async function run({interaction, client}) {
     .setTitle("Help for JKT48 live notifications")
     .setDescription("List of commands:")
     .addFields(
-      {
-        name: "/whitelist",
-        value: "Menambahkan whitelist channel untuk live notifications.",
-      },
       {name: "/ping", value: "Ping the bot"},
       {
-        name: "/removewhitelist",
-        value: "Menghapus whitelist channel untuk live notifications.",
+        name: "/whitelist",
+        value: "Menambahkan whitelist channel untuk live notifikasi.",
+      },
+      {
+        name: "/unwhitelist",
+        value: "Menghapus whitelist channel untuk live notifikasi.",
       },
       {
         name: "/tagrole",
@@ -70,6 +110,46 @@ async function run({interaction, client}) {
       {
         name: "/removetagrole",
         value: "Menghapus tag role saat notifikasi member sedang live.",
+      },
+      {
+        name: "/schedulewhitelist",
+        value:
+          "Menambahkan whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/unwhitelist_schedule",
+        value:
+          "Menghapus whitelist channel untuk notifikasi dari Website JKT48",
+      },
+      {
+        name: "/webhook",
+        value:
+          "Menambahkan webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/removewebhook",
+        value:
+          "Menghapus webhook untuk notifikasi dari Website JKT48 & live notifikasi member JKT48",
+      },
+      {
+        name: "/birthday",
+        value: "Menampilkan data ulang tahun member JKT48",
+      },
+      {
+        name: "/events",
+        value: "Menampilkan jadwal event offair yang akan datang",
+      },
+      {
+        name: "/nowlive",
+        value: "Menampilkan member yang sedang live",
+      },
+      {
+        name: "/schedule",
+        value: "Menampilkan jadwal show theater JKT48",
+      },
+      {
+        name: "/donate",
+        value: "Donasi untuk kelangsungan bot JKT48 live notifications",
       },
       {
         name: "Butuh Bantuan?",
