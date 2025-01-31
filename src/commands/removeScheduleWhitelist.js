@@ -43,7 +43,7 @@ async function run({ interaction, client }) {
     [channel.id, interaction.guild.id],
     (err, row) => {
       if (err) {
-        console.error("Error checking schedule whitelist:", err);
+        console.error("❗ Error checking schedule whitelist:", err);
         return interaction.reply({
           content: "Terjadi error saat memeriksa whitelist.",
           ephemeral: true,
@@ -62,7 +62,7 @@ async function run({ interaction, client }) {
         [channel.id, interaction.guild.id],
         function (err) {
           if (err) {
-            console.error("Error removing from schedule whitelist:", err);
+            console.error("❗ Error removing from schedule whitelist:", err);
             return interaction.reply({
               content: "Terjadi error saat menghapus dari whitelist.",
               ephemeral: true,

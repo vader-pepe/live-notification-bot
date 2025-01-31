@@ -40,7 +40,7 @@ async function run({interaction}) {
 
     await interaction.reply({embeds: [embed], ephemeral: true});
   } catch (error) {
-    console.error("Error fetching events:", error);
+    console.error("❗ Error fetching events:", error);
     await interaction.reply({
       content: "Terjadi kesalahan saat mengambil data event.",
       ephemeral: true,

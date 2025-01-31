@@ -25,7 +25,7 @@ const data = new SlashCommandBuilder()
 let membersData = [];
 fs.readFile("src/member.json", "utf8", (err, data) => {
   if (err) {
-    console.error("Error reading member data:", err);
+    console.error("❗ Error reading member data:", err);
     return;
   }
   membersData = JSON.parse(data);
@@ -61,14 +61,14 @@ async function run({interaction}) {
 
       const dateParts = dateTime.split(", ");
       if (dateParts.length < 2) {
-        console.error("Invalid date format:", dateTime);
+        console.error("❗ Invalid date format:", dateTime);
         return;
       }
 
       const dayOfWeek = dateParts[0];
       const dayAndMonthYear = dateParts[1].split(".");
       if (dayAndMonthYear.length < 3) {
-        console.error("Invalid date format:", dateParts[1]);
+        console.error("❗ Invalid date format:", dateParts[1]);
         return;
       }
 
@@ -95,7 +95,7 @@ async function run({interaction}) {
 
     await interaction.reply({embeds: [embed], ephemeral: true});
   } catch (error) {
-    console.error("Error fetching schedules:", error);
+    console.error("❗ Error fetching schedules:", error);
     await interaction.reply({
       content: "Terjadi kesalahan saat mengambil data jadwal.",
       ephemeral: true,

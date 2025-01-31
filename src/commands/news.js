@@ -51,7 +51,7 @@ async function run({interaction}) {
       components: [row],
     });
   } catch (error) {
-    console.error("Error fetching news:", error);
+    console.error("❗ Error fetching news:", error);
     await interaction.editReply({
       content: "Terjadi kesalahan saat mengambil data berita.",
     });
@@ -90,7 +90,7 @@ async function handleSelect(interaction) {
 
     await interaction.editReply({content: "", embeds: [embed], components: [row]});
   } catch (error) {
-    console.error("Error fetching news detail:", error);
+    console.error("❗ Error fetching news detail:", error);
     await interaction.editReply({
       content: "Terjadi kesalahan saat mengambil detail berita.",
       components: [],

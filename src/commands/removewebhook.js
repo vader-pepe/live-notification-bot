@@ -23,7 +23,7 @@ async function run({ interaction }) {
 
   db.get(`SELECT url FROM webhook WHERE url = ?`, [webhookUrl], (err, row) => {
     if (err) {
-      console.error("Error checking webhook in database:", err.message);
+      console.error("❗ Error checking webhook in database:", err.message);
       return interaction.reply({
         content: "Terjadi error saat memeriksa webhook di database.",
         ephemeral: true,
@@ -39,7 +39,7 @@ async function run({ interaction }) {
 
     db.run(`DELETE FROM webhook WHERE url = ?`, [webhookUrl], function (err) {
       if (err) {
-        console.error("Error deleting webhook from database:", err.message);
+        console.error("❗ Error deleting webhook from database:", err.message);
         return interaction.reply({
           content: "Terjadi error saat menghapus webhook dari database.",
           ephemeral: true,

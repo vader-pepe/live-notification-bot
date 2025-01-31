@@ -37,7 +37,7 @@ router.get("/schedule", async (req, res) => {
     const scheduleData = parseData(htmlData);
     res.json(scheduleData);
   } catch (error) {
-    console.error("Error fetching or parsing schedule data:", error);
+    console.error("❗ Error fetching or parsing schedule data:", error);
     const errorMessage = `Scraping schedule failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -54,7 +54,7 @@ router.get("/news", async (req, res) => {
     const parsedData = parseNewsData(html);
     return res.status(200).json(parsedData);
   } catch (error) {
-    console.error("Error in /news route:", error.message);
+    console.error("❗ Error in /news route:", error.message);
     return res.status(500).json({error: "Internal Server Error"});
   }
 });
@@ -70,7 +70,7 @@ router.get("/news/detail/:id", async (req, res) => {
       res.status(404).json({error: "News not found"});
     }
   } catch (error) {
-    console.error("Error fetching news detail:", error);
+    console.error("❗ Error fetching news detail:", error);
     res.status(500).json({error: "Internal Server Error"});
   }
 });
@@ -81,7 +81,7 @@ router.get("/events", async (req, res) => {
     const specificData = parseSpecificData(htmlData);
     res.status(200).json({success: true, data: specificData});
   } catch (error) {
-    console.error("Error fetching or parsing specific data:", error);
+    console.error("❗ Error fetching or parsing specific data:", error);
     const errorMessage = `Scraping events failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -95,7 +95,7 @@ router.get("/birthdays", async (req, res) => {
     const birthdayData = parseBirthdayData(htmlData);
     res.json(birthdayData);
   } catch (error) {
-    console.error("Error fetching or parsing birthday data:", error);
+    console.error("❗ Error fetching or parsing birthday data:", error);
     const errorMessage = `Scraping birthdays failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -109,7 +109,7 @@ router.get("/schedule/section", async (req, res) => {
     const teaterData = parseScheduleSectionData(htmlData);
     res.json(teaterData);
   } catch (error) {
-    console.error("Error fetching or parsing schedule section data:", error);
+    console.error("❗ Error fetching or parsing schedule section data:", error);
     const errorMessage = `Scraping schedule section failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -123,7 +123,7 @@ router.get("/video", async (req, res) => {
     const videoData = parseVideoData(htmlData);
     res.json(videoData);
   } catch (error) {
-    console.error("Error fetching or parsing video data:", error);
+    console.error("❗ Error fetching or parsing video data:", error);
     const errorMessage = `Scraping video data failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -144,7 +144,7 @@ router.get("/member/:id", async (req, res) => {
 
     res.json(combinedData);
   } catch (error) {
-    console.error("Error fetching or parsing member data:", error);
+    console.error("❗ Error fetching or parsing member data:", error);
     const errorMessage = `Scraping member data failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -160,7 +160,7 @@ router.get("/news/:page", async (req, res) => {
     const newsData = parseNewsSearchData(html);
     res.status(200).json({success: true, data: newsData});
   } catch (error) {
-    console.error("Error fetching or parsing news data:", error);
+    console.error("❗ Error fetching or parsing news data:", error);
     const errorMessage = `Scraping news data failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -174,7 +174,7 @@ router.get("/member", async (req, res) => {
     const members = parseMemberData(html);
     res.json({members});
   } catch (error) {
-    console.error("Error fetching or parsing member data:", error);
+    console.error("❗ Error fetching or parsing member data:", error);
     const errorMessage = `Scraping member data failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
@@ -190,7 +190,7 @@ router.get("/banners", async (req, res) => {
     const banners = parseBannerData(html);
     res.status(200).json({success: true, data: banners});
   } catch (error) {
-    console.error("Error fetching or parsing banner data:", error);
+    console.error("❗ Error fetching or parsing banner data:", error);
     const errorMessage = `Scraping banners data failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 

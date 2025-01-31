@@ -45,7 +45,7 @@
       `SELECT channel_id FROM whitelist`,
       (err, rows) => {
         if (err) {
-          console.error("Error checking whitelist:", err);
+          console.error("❗ Error checking whitelist:", err);
           return interaction.reply({
             content: "Terjadi error saat memeriksa whitelist.",
             ephemeral: true,
@@ -97,7 +97,7 @@
           [channel.id, interaction.guild.id],
           (err, row) => {
             if (err) {
-              console.error("Error checking schedule whitelist:", err);
+              console.error("❗ Error checking schedule whitelist:", err);
               return interaction.reply({
                 content: "Terjadi error saat memeriksa whitelist.",
                 ephemeral: true,
@@ -116,7 +116,7 @@
               [channel.id, interaction.guild.id],
               function (err) {
                 if (err) {
-                  console.error("Error adding to schedule whitelist:", err);
+                  console.error("❗ Error adding to schedule whitelist:", err);
                   return interaction.reply({
                     content: "Terjadi error saat menambahkan ke whitelist.",
                     ephemeral: true,

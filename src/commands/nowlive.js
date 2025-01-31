@@ -14,7 +14,7 @@ async function run({interaction, client}) {
        SELECT displayName AS member_name, NULL AS username, NULL AS slug, startLive AS start_live, 'Showroom' AS platform, room_url_key FROM showroom_live `,
       (err, rows) => {
         if (err) {
-          console.error("Failed to retrieve live members", err);
+          console.error("❗ Failed to retrieve live members", err);
           return interaction.reply({
             content: "Gagal mengambil data member yang sedang live.",
             ephemeral: true,

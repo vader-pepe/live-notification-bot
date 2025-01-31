@@ -38,7 +38,7 @@ async function run({interaction, client}) {
 
   db.get(`SELECT url FROM webhook WHERE url = ?`, [webhookUrl], (err, row) => {
     if (err) {
-      console.error("Database error:", err.message);
+      console.error("❗ Database error:", err.message);
       return interaction.reply({
         content: "Terjadi error saat memeriksa database.",
         ephemeral: true,
@@ -127,7 +127,7 @@ async function processWebhookRequest(interaction, client, webhookUrl) {
         [webhookUrl, interaction.user.id, interaction.guild.id],
         (err) => {
           if (err) {
-            console.error("Error saving webhook to database:", err.message);
+            console.error("❗ Error saving webhook to database:", err.message);
             return btnInteraction.reply({
               content: "Terjadi error saat menyimpan webhook ke database.",
               ephemeral: true,

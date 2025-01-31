@@ -58,7 +58,7 @@ async function run({interaction, client}) {
       ephemeral: true,
     });
   } catch (error) {
-    console.error(`Error sending message to channel:`, error);
+    console.error(`❗ Error sending message to channel:`, error);
     await interaction.reply({
       content:
         "Terjadi kesalahan saat mengirim pesan. Silakan coba lagi nanti.",

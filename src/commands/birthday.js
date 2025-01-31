@@ -38,7 +38,7 @@ async function run({interaction}) {
 
     await interaction.reply({embeds: [embed], ephemeral: true});
   } catch (error) {
-    console.error("Error fetching birthdays:", error);
+    console.error("❗ Error fetching birthdays:", error);
     await interaction.reply({
       content: "Terjadi kesalahan saat mengambil data ulang tahun.",
       ephemeral: true,

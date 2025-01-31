@@ -61,7 +61,7 @@ async function run({interaction, client}) {
         }
       } catch (error) {
         console.error(
-          `Failed to send announcement to channel ${channelId}: ${error}`
+          `❗ Failed to send announcement to channel ${channelId}: ${error}`
         );
         failureCount++;
       }
