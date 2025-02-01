@@ -124,13 +124,15 @@ function createEmbed(stream, startLive) {
         value: startLive,
         inline: true,
       },
-      ...(displayName.includes("JKT48 Official SHOWROOM") ? [] : [
-        {
-          name: "Tonton di Browser!",
-          value: `[Multi Stream](https://dc.crstlnz.my.id/multi) | [Tonton Fullscreen](https://dc.crstlnz.my.id/watch/${stream.room_url_key})`,
-          inline: true,
-        }
-      ]),
+      ...(displayName.includes("JKT48 Official SHOWROOM")
+        ? []
+        : [
+            {
+              name: "Tonton di Browser!",
+              value: `[Multi Stream](https://dc.crstlnz.my.id/multi) | [Tonton Fullscreen](https://dc.crstlnz.my.id/watch/${stream.room_url_key})`,
+              inline: true,
+            },
+          ]),
       {
         name: "Tonton di Showroom!",
         value: `[Showroom](https://www.showroom-live.com/r/${stream.room_url_key})`,
@@ -226,12 +228,13 @@ async function sendNotifications(client) {
           }
           const channelIds = rows.map((row) => row.channel_id);
 
+          // Ambil URL webhook dari tabel webhook
           db.all(`SELECT url FROM webhook`, async (err, webhookRows) => {
             if (err) {
               console.error("❗ Failed to retrieve webhook URLs", err);
               return;
             }
-            const webhookUrls = webhookRows.map(row => row.url);
+            const webhookUrls = webhookRows.map((row) => row.url);
 
             for (const stream of newStreams) {
               console.log(
@@ -240,6 +243,8 @@ async function sendNotifications(client) {
 
               const startLive = parseDateTime(new Date().toISOString());
               const embed = createEmbed(stream, startLive);
+
+              // Kirim embed live ke setiap channel
               for (const channelId of channelIds) {
                 try {
                   const channel = await client.channels.fetch(channelId);
@@ -249,7 +254,7 @@ async function sendNotifications(client) {
                       [channel.guild.id],
                       async (err, row) => {
                         if (err) {
-                          console.error("Database error:", err);
+                          console.error("❗ Database error:", err);
                           return;
                         }
 
@@ -262,11 +267,11 @@ async function sendNotifications(client) {
                         }
 
                         try {
-                          await channel.send({ content, embeds: [embed] });
+                          await channel.send({content, embeds: [embed]});
                         } catch (error) {
                           if (error.code === 50013 || error.code === 50001) {
                             console.error(
-                              `Missing permissions for channel ${channelId}. Removing from whitelist.`
+                              `❗ Missing permissions for channel ${channelId}. Removing from whitelist.`
                             );
                             db.run(
                               `DELETE FROM whitelist WHERE channel_id = ?`,
@@ -274,7 +279,7 @@ async function sendNotifications(client) {
                             );
                           } else {
                             console.error(
-                              `Error sending notification to channel ${channelId}`,
+                              `❗ Error sending notification to channel ${channelId}`,
                               error
                             );
                           }
@@ -283,7 +288,26 @@ async function sendNotifications(client) {
                     );
                   }
                 } catch (error) {
-                  console.error(`Failed to fetch channel ${channelId}`, error);
+                  console.error(
+                    `❗ Failed to fetch channel ${channelId}`,
+                    error
+                  );
+                }
+              }
+
+              // Kirim embed live ke setiap webhook
+              for (const webhookUrl of webhookUrls) {
+                try {
+                  await axios.post(webhookUrl, {
+                    content: null,
+                    embeds: [embed.toJSON()],
+                    username: config.webhook.name,
+                    avatar_url: config.webhook.avatar,
+                  });
+                } catch (error) {
+                  console.error(
+                    `❗ Failed to send live embed to webhook ${webhookUrl}: ${error.message}`
+                  );
                 }
               }
 
@@ -306,6 +330,7 @@ async function sendNotifications(client) {
               );
             }
 
+            // Mengirim notifikasi untuk livestream yang telah berakhir
             const endedLiveIds = [...notifiedLiveIds.keys()].filter(
               (liveId) =>
                 !uniqueLiveStreams.some(
@@ -318,18 +343,23 @@ async function sendNotifications(client) {
               const startLive = user.startLive;
               const endLive = parseDateTime(new Date().toISOString());
               const embed = createEndLiveEmbed(user, startLive, endLive);
-              
+
+              // Kirim embed end live ke setiap channel
               for (const channelId of channelIds) {
                 try {
                   const channel = await client.channels.fetch(channelId);
                   if (channel) {
-                    await channel.send({ embeds: [embed] });
+                    await channel.send({embeds: [embed]});
                   }
                 } catch (error) {
-                  console.error(`Failed to send end live notification:`, error);
+                  console.error(
+                    `❗ Failed to send end live notification:`,
+                    error
+                  );
                 }
               }
 
+              // Kirim embed end live ke setiap webhook
               for (const webhookUrl of webhookUrls) {
                 try {
                   await axios.post(webhookUrl, {
@@ -339,7 +369,9 @@ async function sendNotifications(client) {
                     avatar_url: config.webhook.avatar,
                   });
                 } catch (error) {
-                  console.error(`Failed to send end live embed to webhook ${webhookUrl}: ${error.message}`);
+                  console.error(
+                    `❗ Failed to send end live embed to webhook ${webhookUrl}: ${error.message}`
+                  );
                 }
               }
 
