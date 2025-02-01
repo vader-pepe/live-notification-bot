@@ -70,7 +70,7 @@ antiCrash
 
       const fileMetadata = {
         name: path.basename(filePath), // Nama file di Google Drive
-        parents: ["1daj5pFVGNOWMyV0McmahSVmVAsGLbWuS"], // ID folder yang benar
+        parents: [process.env.FOLDER_ID], // ID folder yang benar
       };
 
       const media = {
