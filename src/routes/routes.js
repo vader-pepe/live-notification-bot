@@ -37,7 +37,7 @@ router.get("/schedule", async (req, res) => {
     const scheduleData = parseData(htmlData);
     res.json(scheduleData);
   } catch (error) {
-    console.error("❗ Error fetching or parsing schedule data:", error);
+    console.error("❗ Error fetching or parsing schedule data");
     const errorMessage = `Scraping schedule failed. Error: ${error.message}`;
     sendLogToDiscord(errorMessage, "Error");
 
