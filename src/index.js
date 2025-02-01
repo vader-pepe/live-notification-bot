@@ -12,6 +12,8 @@ const routes = require("./routes/routes");
 const { sendLogToDiscord } = require("./other/discordLogger");
 const config = require("./main/config");
 const antiCrash = require("./anticrash");
+const {google} = require("googleapis");
+const fs = require("fs");
 
 const app = express();
 
@@ -27,7 +29,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(config.port, config.ipAddress, () => {
-  console.log(`Server is running at ${config.ipAddress}:${config.port}`);
+  console.log(`Server is running at http://localhost:${config.port}`);
 });
 
 antiCrash
@@ -51,17 +53,52 @@ antiCrash
       bulkRegister: true,
     });
 
-    const backupDatabase = async (userId) => {
-      try {
-        const user = await client.users.fetch(userId);
-        const dbPath = path.join(__dirname, "../whitelist.db");
-        const attachment = new AttachmentBuilder(dbPath);
+    // Fungsi untuk mengautentikasi ke Google Drive
+    async function authenticate() {
+      const auth = new google.auth.GoogleAuth({
+        keyFile: path.join(__dirname, "./google-drive.json"), // Ganti dengan path ke file JSON kredensial Anda
+        scopes: ["https://www.googleapis.com/auth/drive.file"],
+      });
 
-        await user.send({
-          content: "Here is the latest backup of the whitelist database.",
-          files: [attachment],
+      return await auth.getClient();
+    }
+
+    // Fungsi untuk mengupload file ke Google Drive
+    async function uploadFileToDrive(filePath) {
+      const auth = await authenticate();
+      const drive = google.drive({version: "v3", auth});
+
+      const fileMetadata = {
+        name: path.basename(filePath), // Nama file di Google Drive
+        parents: ["1daj5pFVGNOWMyV0McmahSVmVAsGLbWuS"], // ID folder yang benar
+      };
+
+      const media = {
+        mimeType: "application/octet-stream", // Ganti dengan tipe MIME yang sesuai
+        body: fs.createReadStream(filePath),
+      };
+
+      try {
+        const response = await drive.files.create({
+          resource: fileMetadata,
+          media: media,
+          fields: "id",
         });
-        console.log(`Backup sent to user ${userId}`);
+        console.log("File uploaded to Google Drive with ID:", response.data.id);
+      } catch (error) {
+        console.error("Error uploading file to Google Drive:", error);
+      }
+    }
+
+    // Fungsi untuk backup database
+    const backupDatabase = async () => {
+      try {
+        const dbPath = path.join(__dirname, "../whitelist.db");
+
+        // Upload ke Google Drive
+        await uploadFileToDrive(dbPath);
+
+        console.log(`Backup sent to Google Drive`);
       } catch (error) {
         console.error("Error backing up database:", error);
       }
@@ -84,9 +121,9 @@ antiCrash
 
         try {
           if (interaction.deferred) {
-            await interaction.editReply({ content: errorMessage });
+            await interaction.editReply({content: errorMessage});
           } else if (!interaction.replied) {
-            await interaction.reply({ content: errorMessage, ephemeral: true });
+            await interaction.reply({content: errorMessage, ephemeral: true});
           }
         } catch (replyError) {
           console.error("Error while replying to interaction:", replyError);
@@ -108,9 +145,9 @@ antiCrash
         };
 
         const presences = [
-          { name: "JKT48 Live Notification!", type: ActivityType.Watching },
-          { name: `${totalMembers} Members`, type: ActivityType.Watching },
-          { name: `${totalServers} Servers`, type: ActivityType.Watching },
+          {name: "JKT48 Live Notification!", type: ActivityType.Watching},
+          {name: `${totalMembers} Members`, type: ActivityType.Watching},
+          {name: `${totalServers} Servers`, type: ActivityType.Watching},
         ];
 
         let current = 0;
@@ -132,9 +169,8 @@ antiCrash
 
       updatePresence();
 
-      const userId = process.env.OWNER_ID;
       schedule.scheduleJob("0 */6 * * *", () => {
-        backupDatabase(userId);
+        backupDatabase();
       });
 
       require("./events/showroom_notifier")(client);
