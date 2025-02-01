@@ -59,10 +59,10 @@ node src/index.js
 │ ├── db.js # Koneksi ke database SQLite
 │ ├── main
 │ │ └── config.js # Konfigurasi bot
+│ ├── google-drive.json # File credential key Google Drive API 
+│ ├── member.json # Data member JKT48
 │ └── index.js # Entry point untuk bot
 │
-├── google-drive.json # File credential key Google Drive API 
-├── member.json # Data member JKT48
 ├── package.json # File konfigurasi npm
 └── README.md # Dokumentasi proyek
 ```
