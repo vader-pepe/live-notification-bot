@@ -1,6 +1,6 @@
-import fs from "node:fs";
+import { readFile } from "node:fs";
 import axios from "axios";
-import { ActionRowBuilder, ButtonBuilder, ChannelType, type Client, EmbedBuilder, TextChannel } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, type Client, EmbedBuilder, TextChannel } from "discord.js";
 import schedule from "node-schedule";
 
 import type { Member } from "@/commands/schedule";
@@ -10,7 +10,7 @@ import db from "@/common/utils/db";
 import { env } from "@/common/utils/envConfig";
 
 let membersData: Member[] = [];
-fs.readFile("./member.json", "utf8", (err, data) => {
+readFile("member.json", "utf8", (err, data) => {
   if (err) {
     console.error("❗ Error reading member data:", err);
     return;

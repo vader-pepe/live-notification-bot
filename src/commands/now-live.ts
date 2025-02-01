@@ -43,7 +43,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
 
         const description = rows
           .map((row: any) => {
-            let link;
+            let link = "";
             if (row.platform === "IDN Live") {
               link = `https://www.idn.app/${row.username}/live/${row.slug}`;
             } else if (row.platform === "Showroom") {

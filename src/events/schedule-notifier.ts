@@ -9,7 +9,7 @@ import { env } from "@/common/utils/envConfig";
 import { type Channel, type Client, EmbedBuilder, TextChannel } from "discord.js";
 
 let membersData: Member[] = [];
-readFile("./member.json", "utf8", (err, data) => {
+readFile("member.json", "utf8", (err, data) => {
   if (err) {
     console.error("❗ Error reading member data:", err);
     return;
