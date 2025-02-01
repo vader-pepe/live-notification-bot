@@ -29,7 +29,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(config.port, config.ipAddress, () => {
-  console.log(`Server is running at http://localhost:${config.port}`);
+  console.log(`❗ Server is running at http://localhost:${config.port}`);
 });
 
 antiCrash
@@ -84,23 +84,34 @@ antiCrash
           media: media,
           fields: "id",
         });
-        console.log("File uploaded to Google Drive with ID:", response.data.id);
       } catch (error) {
-        console.error("Error uploading file to Google Drive:", error);
+        console.error("❗ Error uploading file to Google Drive:", error);
       }
     }
 
     // Fungsi untuk backup database
-    const backupDatabase = async () => {
+    const backupDatabase = async (userId) => {
       try {
+        const user = await client.users.fetch(userId);
         const dbPath = path.join(__dirname, "../whitelist.db");
 
-        // Upload ke Google Drive
-        await uploadFileToDrive(dbPath);
+        // Hapus file backup yang lama jika ada
+        const backupFilePath = path.join(__dirname, "../whitelist_backup.db");
+        if (fs.existsSync(backupFilePath)) {
+          fs.unlinkSync(backupFilePath);
+          console.log("❗ Old backup file deleted.");
+        }
 
-        console.log(`Backup sent to Google Drive`);
+        // Salin file database ke file backup
+        fs.copyFileSync(dbPath, backupFilePath);
+        console.log("❗ Database backup created.");
+
+        // Upload ke Google Drive
+        await uploadFileToDrive(backupFilePath);
+
+        console.log(`❗ Backup sent to Google Drive!`);
       } catch (error) {
-        console.error("Error backing up database:", error);
+        console.error("❗ Error backing up database:", error);
       }
     };
 
@@ -115,7 +126,7 @@ antiCrash
           await handleSelect(interaction);
         }
       } catch (error) {
-        console.error("Error handling interaction:", error);
+        console.error("❗ Error handling interaction:", error);
 
         const errorMessage = "Terjadi kesalahan saat menjalankan perintah ini.";
 
@@ -126,7 +137,7 @@ antiCrash
             await interaction.reply({content: errorMessage, ephemeral: true});
           }
         } catch (replyError) {
-          console.error("Error while replying to interaction:", replyError);
+          console.error("❗ Error while replying to interaction:", replyError);
         }
       }
     });
@@ -185,9 +196,9 @@ antiCrash
     });
 
     client.login(process.env.BOT_TOKEN).catch((error) => {
-      console.error("Failed to initialize antiCrash module:", error);
+      console.error("❗ Failed to initialize antiCrash module:", error);
     });
   })
   .catch((error) => {
-    console.error("Failed to initialize antiCrash module:", error);
+    console.error("❗ Failed to initialize antiCrash module:", error);
   });
