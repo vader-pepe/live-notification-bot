@@ -2,3 +2,4 @@
 node_modules
 whitelist.db
 error.log
+google-drive.json
