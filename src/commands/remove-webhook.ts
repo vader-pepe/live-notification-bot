@@ -20,7 +20,7 @@ export async function run({ interaction }: SlashCommandProps) {
 
   const webhookUrl = interaction.options.getString("url");
 
-  db.get(`SELECT url FROM webhook WHERE url = ?`, [webhookUrl], (err, row) => {
+  db.get("SELECT url FROM webhook WHERE url = ?", [webhookUrl], (err, row) => {
     if (err) {
       console.error("Error checking webhook in database:", err.message);
       return interaction.reply({
@@ -31,12 +31,12 @@ export async function run({ interaction }: SlashCommandProps) {
 
     if (!row) {
       return interaction.reply({
-        content: `Webhook dengan URL tersebut tidak ditemukan di database.`,
+        content: "Webhook dengan URL tersebut tidak ditemukan di database.",
         ephemeral: true,
       });
     }
 
-    db.run(`DELETE FROM webhook WHERE url = ?`, [webhookUrl], (err) => {
+    db.run("DELETE FROM webhook WHERE url = ?", [webhookUrl], (err) => {
       if (err) {
         console.error("Error deleting webhook from database:", err.message);
         return interaction.reply({

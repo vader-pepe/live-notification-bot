@@ -69,7 +69,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
         });
       }
 
-      db.get(`SELECT channel_id FROM whitelist WHERE channel_id = ?`, [channel.id], (err, row) => {
+      db.get("SELECT channel_id FROM whitelist WHERE channel_id = ?", [channel.id], (err, row) => {
         if (err) {
           return interaction.reply({
             content: "Terjadi error saat memeriksa whitelist.",
@@ -84,7 +84,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
           });
         }
 
-        db.run(`INSERT INTO whitelist (channel_id) VALUES (?)`, [channel.id], (err) => {
+        db.run("INSERT INTO whitelist (channel_id) VALUES (?)", [channel.id], (err) => {
           if (err) {
             return interaction.reply({
               content: "Terjadi error saat menambahkan ke whitelist.",

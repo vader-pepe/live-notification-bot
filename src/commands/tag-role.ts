@@ -21,7 +21,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
   if (guild && role) {
     const guildId = interaction.guild.id;
 
-    db.run(`INSERT OR REPLACE INTO tag_roles (guild_id, role_id) VALUES (?, ?)`, [guildId, role.id], (err) => {
+    db.run("INSERT OR REPLACE INTO tag_roles (guild_id, role_id) VALUES (?, ?)", [guildId, role.id], (err) => {
       if (err) {
         return interaction.reply({
           content: "Terjadi error saat menyimpan role.",

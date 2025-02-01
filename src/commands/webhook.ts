@@ -34,7 +34,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
       });
     }
 
-    db.get(`SELECT url FROM webhook WHERE url = ?`, [webhookUrl], (err, row) => {
+    db.get("SELECT url FROM webhook WHERE url = ?", [webhookUrl], (err, row) => {
       if (err) {
         console.error("Database error:", err.message);
         return interaction.reply({
@@ -69,7 +69,7 @@ async function processWebhookRequest(interaction: ChatInputCommandInteraction, c
 
     const embed = new EmbedBuilder()
       .setTitle("Webhook Request")
-      .setDescription(`Terdapat permintaan webhook baru yang membutuhkan persetujuan.`)
+      .setDescription("Terdapat permintaan webhook baru yang membutuhkan persetujuan.")
       .addFields(
         { name: "User ID", value: interaction.user.id, inline: true },
         { name: "Guild ID", value: interaction.guild.id, inline: true },
@@ -116,7 +116,7 @@ async function processWebhookRequest(interaction: ChatInputCommandInteraction, c
         let result = "";
         if (btnInteraction.customId === `approve_${interaction.id}`) {
           db.run(
-            `INSERT INTO webhook (url, user_id, guild_id) VALUES (?, ?, ?)`,
+            "INSERT INTO webhook (url, user_id, guild_id) VALUES (?, ?, ?)",
             [webhookUrl, interaction.user.id, guildId],
             (err) => {
               if (err) {
@@ -127,7 +127,7 @@ async function processWebhookRequest(interaction: ChatInputCommandInteraction, c
                 });
               }
 
-              interaction.user.send(`Permintaan webhook Anda telah disetujui.`);
+              interaction.user.send("Permintaan webhook Anda telah disetujui.");
             },
           );
           result = "Approved";
@@ -136,7 +136,7 @@ async function processWebhookRequest(interaction: ChatInputCommandInteraction, c
             ephemeral: true,
           });
         } else if (btnInteraction.customId === `deny_${interaction.id}`) {
-          interaction.user.send(`Permintaan webhook Anda telah ditolak.`);
+          interaction.user.send("Permintaan webhook Anda telah ditolak.");
           result = "Denied";
           btnInteraction.reply({
             content: "Webhook request telah ditolak.",
@@ -161,7 +161,7 @@ async function processWebhookRequest(interaction: ChatInputCommandInteraction, c
             .setFooter({ text: "Permintaan kadaluarsa." });
 
           await message.edit({ embeds: [expiredEmbed], components: [] });
-          await interaction.user.send(`Permintaan webhook Anda Expired, silahkan request ulang!`);
+          await interaction.user.send("Permintaan webhook Anda Expired, silahkan request ulang!");
         }
       });
     }

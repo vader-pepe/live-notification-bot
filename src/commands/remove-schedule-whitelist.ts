@@ -33,7 +33,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
 
     if (guild) {
       db.get(
-        `SELECT channel_id FROM schedule_id WHERE channel_id = ? AND guild_id = ?`,
+        "SELECT channel_id FROM schedule_id WHERE channel_id = ? AND guild_id = ?",
         [channel.id, guild.id],
         (err, row) => {
           if (err) {
@@ -51,7 +51,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
             });
           }
 
-          db.run(`DELETE FROM schedule_id WHERE channel_id = ? AND guild_id = ?`, [channel.id, guild.id], (err) => {
+          db.run("DELETE FROM schedule_id WHERE channel_id = ? AND guild_id = ?", [channel.id, guild.id], (err) => {
             if (err) {
               console.error("Error removing from schedule whitelist:", err);
               return interaction.reply({

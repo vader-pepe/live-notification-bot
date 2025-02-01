@@ -20,7 +20,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
 
   const channel = interaction.options.getChannel("channel");
   if (channel) {
-    db.get(`SELECT channel_id FROM whitelist WHERE channel_id = ?`, [channel.id], (err, row) => {
+    db.get("SELECT channel_id FROM whitelist WHERE channel_id = ?", [channel.id], (err, row) => {
       if (err) {
         return interaction.reply({
           content: "Terjadi error saat mengecek whitelist.",
@@ -35,7 +35,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
         });
       }
 
-      db.run(`DELETE FROM whitelist WHERE channel_id = ?`, [channel.id], (err) => {
+      db.run("DELETE FROM whitelist WHERE channel_id = ?", [channel.id], (err) => {
         if (err) {
           return interaction.reply({
             content: "Terjadi error saat menghapus whitelist.",

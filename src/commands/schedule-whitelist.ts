@@ -42,7 +42,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
     }
 
     // Cek apakah ada channel yang sudah di-whitelist
-    db.all(`SELECT channel_id FROM whitelist`, (err, rows) => {
+    db.all("SELECT channel_id FROM whitelist", (err, rows) => {
       if (err) {
         console.error("Error checking whitelist:", err);
         return interaction.reply({
@@ -93,7 +93,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
 
         if (guild) {
           db.get(
-            `SELECT channel_id FROM schedule_id WHERE channel_id = ? AND guild_id = ?`,
+            "SELECT channel_id FROM schedule_id WHERE channel_id = ? AND guild_id = ?",
             [channel.id, interaction.guild.id],
             (err, row) => {
               if (err) {
@@ -111,7 +111,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
                 });
               }
 
-              db.run(`INSERT INTO schedule_id (channel_id, guild_id) VALUES (?, ?)`, [channel.id, guild.id], (err) => {
+              db.run("INSERT INTO schedule_id (channel_id, guild_id) VALUES (?, ?)", [channel.id, guild.id], (err) => {
                 if (err) {
                   console.error("Error adding to schedule whitelist:", err);
                   return interaction.reply({

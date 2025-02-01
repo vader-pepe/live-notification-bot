@@ -20,7 +20,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
   if (guild) {
     const guildId = guild.id;
 
-    db.get(`SELECT role_id FROM tag_roles WHERE guild_id = ?`, [guildId], (err, row) => {
+    db.get("SELECT role_id FROM tag_roles WHERE guild_id = ?", [guildId], (err, row) => {
       if (err) {
         return interaction.reply({
           content: "Terjadi error saat memeriksa role.",
@@ -35,7 +35,7 @@ export async function run({ interaction, client }: SlashCommandProps) {
         });
       }
 
-      db.run(`DELETE FROM tag_roles WHERE guild_id = ?`, [guildId], (err) => {
+      db.run("DELETE FROM tag_roles WHERE guild_id = ?", [guildId], (err) => {
         if (err) {
           return interaction.reply({
             content: "Terjadi error saat menghapus role.",
