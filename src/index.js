@@ -1,15 +1,11 @@
-const {
-  Client,
-  ActivityType,
-  AttachmentBuilder,
-} = require("discord.js");
-const { CommandKit } = require("commandkit");
+const {Client, ActivityType, AttachmentBuilder} = require("discord.js");
+const {CommandKit} = require("commandkit");
 const path = require("path");
 const schedule = require("node-schedule");
 const express = require("express");
 const cors = require("cors");
 const routes = require("./routes/routes");
-const { sendLogToDiscord } = require("./other/discordLogger");
+const {sendLogToDiscord} = require("./other/discordLogger");
 const config = require("./main/config");
 const antiCrash = require("./anticrash");
 const {google} = require("googleapis");
@@ -29,7 +25,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(config.port, config.ipAddress, () => {
-  console.log(`❗ Server is running at http://localhost:${config.port}`);
+  console.log(`Server is running at http://localhost:${config.port}`);
 });
 
 antiCrash
@@ -63,13 +59,45 @@ antiCrash
       return await auth.getClient();
     }
 
+    // Fungsi untuk mencari file di Google Drive berdasarkan nama
+    async function findFileByName(drive, fileName) {
+      const response = await drive.files.list({
+        q: `name='${fileName}' and '${process.env.FOLDER_ID}' in parents`,
+        fields: "files(id, name)",
+      });
+
+      return response.data.files[0]; // Mengembalikan file pertama yang ditemukan
+    }
+
+    // Fungsi untuk menghapus file di Google Drive berdasarkan ID
+    async function deleteFileById(drive, fileId) {
+      try {
+        await drive.files.delete({
+          fileId: fileId,
+        });
+        console.log(`❗ Old backup file deleted from Google Drive.`);
+      } catch (error) {
+        console.error("❗ Error deleting file from Google Drive:", error);
+      }
+    }
+
     // Fungsi untuk mengupload file ke Google Drive
     async function uploadFileToDrive(filePath) {
       const auth = await authenticate();
       const drive = google.drive({version: "v3", auth});
 
+      const fileName = path.basename(filePath); // Nama file di Google Drive
+
+      // Cari file yang sudah ada di Google Drive
+      const existingFile = await findFileByName(drive, fileName);
+
+      // Jika file sudah ada, hapus terlebih dahulu
+      if (existingFile) {
+        await deleteFileById(drive, existingFile.id);
+      }
+
       const fileMetadata = {
-        name: path.basename(filePath), // Nama file di Google Drive
+        name: fileName,
         parents: [process.env.FOLDER_ID], // ID folder yang benar
       };
 
@@ -84,23 +112,19 @@ antiCrash
           media: media,
           fields: "id",
         });
+        console.log(
+          `❗ File uploaded to Google Drive!`
+        );
       } catch (error) {
         console.error("❗ Error uploading file to Google Drive:", error);
       }
     }
 
     // Fungsi untuk backup database
-    const backupDatabase = async (userId) => {
+    const backupDatabase = async () => {
       try {
-        const user = await client.users.fetch(userId);
         const dbPath = path.join(__dirname, "../whitelist.db");
-
-        // Hapus file backup yang lama jika ada
-        const backupFilePath = path.join(__dirname, "../whitelist_backup.db");
-        if (fs.existsSync(backupFilePath)) {
-          fs.unlinkSync(backupFilePath);
-          console.log("❗ Old backup file deleted.");
-        }
+        const backupFilePath = path.join(__dirname, "../whitelist_backup_1.db");
 
         // Salin file database ke file backup
         fs.copyFileSync(dbPath, backupFilePath);
