@@ -35,10 +35,14 @@ Sebelum menjalankan proyek ini, pastikan Anda memiliki:
 
 3. Buat file `.env` di root proyek Anda dan tambahkan variabel berikut:
    ```plaintext
-   OWNER_ID = YOUR_DISCORD_USER_ID
-   DB_PATH = PUT_DATABASE_PATH || ./whitelist.db
-   BOT_TOKEN = TOKEN_YOUR_BOT
-   PORT = PUT_PORT_HERE || 3000
+   OWNER_ID = PUT_YOUR_USER_ID
+   WEBHOOK_APPROVAL_ID =  PUT_YOUR_APPROVAL_WEBHOOK_CHANNEL_ID
+   DB_PATH=./whitelist.db
+   BOT_TOKEN = PUT_YOUR_BOT_TOKEN
+   PORT = PUT_YOUR_PORT || 3000
+   IP_ADDRESS = PUT_YOUR_IP_ADDRESS
+   X_API_KEY = PUT_YOUR_X_API_KEY
+   FOLDER_ID = PUT_YOUR_GOOGLEDRIVE_FOLDER_ID
    ```
 
 ## Menjalankan Proyek
@@ -55,9 +59,10 @@ node src/index.js
 │ ├── db.js # Koneksi ke database SQLite
 │ ├── main
 │ │ └── config.js # Konfigurasi bot
+│ ├── google-drive.json # File credential key Google Drive API 
+│ ├── member.json # Data member JKT48
 │ └── index.js # Entry point untuk bot
 │
-├── member.json # Data member JKT48
 ├── package.json # File konfigurasi npm
 └── README.md # Dokumentasi proyek
 ```
