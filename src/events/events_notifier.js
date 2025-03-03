@@ -170,7 +170,7 @@ async function sendScheduleNotifications(client) {
 async function fetchSchedules() {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/schedule/section`
+      `${config.ipAddress}:${config.port}/api/schedule/section`
     );
     return response.data;
   } catch (error) {
