@@ -38,17 +38,6 @@ function getNickname(name) {
 }
 
 async function sendScheduleNotifications(client) {
-  const whitelistedChannels = await getWhitelistedChannels();
-  const prioritizedChannels = await getPrioritizedChannels();
-
-  const channelsToNotify =
-    prioritizedChannels.length > 0 ? prioritizedChannels : whitelistedChannels;
-
-  if (!channelsToNotify || channelsToNotify.length === 0) {
-    console.error("❗ No whitelisted channels found.");
-    return;
-  }
-
   const schedules = await fetchSchedules();
   if (!schedules || schedules.length === 0) {
     return null;
@@ -90,24 +79,62 @@ async function sendScheduleNotifications(client) {
   if (hasNewSchedules) {
     embed.addFields(fields);
 
-    for (const channelId of channelsToNotify) {
-      try {
-        const channel = await client.channels.fetch(channelId);
-        if (channel) {
-          try {
-            await channel.send({embeds: [embed]});
-          } catch (error) {
-            console.error(
-              `❗ Error sending to channel ${channelId}:`,
-              error.message
-            );
+    db.serialize(() => {
+      db.all(
+        `SELECT guild_id, channel_id FROM schedule_id`,
+        async (err, scheduleRows) => {
+          if (err) {
+            console.error("❗ Error retrieving schedule channels:", err);
+            return;
           }
-        }
-      } catch (error) {
-        console.error(`❗ Failed to fetch channel ${channelId}`, error);
-      }
-    }
 
+          const handledGuilds = new Set();
+
+          for (const {guild_id, channel_id} of scheduleRows) {
+            try {
+              const channel = await client.channels.fetch(channel_id);
+              if (channel) {
+                await channel.send({embeds: [embed]});
+                handledGuilds.add(guild_id);
+              } else {
+                console.log(
+                  `❗ Channel dengan ID ${channel_id} tidak ditemukan.`
+                );
+              }
+            } catch (error) {
+              console.error(
+                `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+              );
+            }
+          }
+
+          db.all(
+            "SELECT channel_id FROM whitelist",
+            async (err, whitelistRows) => {
+              if (err) {
+                console.error("❗ Error retrieving whitelist channels:", err);
+                return;
+              }
+
+              for (const {channel_id} of whitelistRows) {
+                try {
+                  const channel = await client.channels.fetch(channel_id);
+                  if (channel && !handledGuilds.has(channel.guild.id)) {
+                    await channel.send({embeds: [embed]});
+                  }
+                } catch (error) {
+                  console.error(
+                    `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
+                  );
+                }
+              }
+            }
+          );
+        }
+      );
+    });
+
+    // Handle webhooks
     db.all("SELECT url FROM webhook", async (err, webhookRows) => {
       if (err) {
         console.error("❗ Error retrieving webhook URLs:", err.message);
@@ -118,7 +145,6 @@ async function sendScheduleNotifications(client) {
         return null;
       }
 
-      // Send to each webhook
       for (const webhook of webhookRows) {
         try {
           await axios.post(webhook.url, {
@@ -144,7 +170,7 @@ async function sendScheduleNotifications(client) {
 async function fetchSchedules() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule/section`
+      `http://localhost:${config.port}/api/schedule/section`
     );
     return response.data;
   } catch (error) {
