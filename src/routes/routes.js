@@ -23,7 +23,9 @@ const {
 } = require("../utils/schedule-section");
 const {fetchHtmlFromJKT48, parseVideoData} = require("../utils/video");
 const {fetchNewsDetail} = require("../utils/news-id");
-const {scrapeGiftData} = require("../utils/gift");
+const { scrapeGiftData } = require("../utils/gift");
+const { getRecentLiveData } = require("../utils/recent-live");
+const { getDetailRecentLive } = require("../utils/detail-recent-live");
 const {sendLogToDiscord} = require("../other/discordLogger");
 
 const scrapeData = () => {
@@ -214,6 +216,33 @@ router.get("/gift/:uuid_streamer", async (req, res) => {
       message: "Failed to fetch gift data",
       error: error.message,
     });
+  }
+});
+
+router.get("/recent-live", async (req, res) => {
+  try {
+    const data = await getRecentLiveData();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({error: "Internal Server Error"});
+  }
+});
+
+router.get("/recent-live/:data_id", async (req, res) => {
+  try {
+    const {data_id} = req.params;
+
+    const detail = await getDetailRecentLive(data_id);
+
+    if (detail) {
+      res.json(detail);
+    } else {
+      res.status(404).json({message: "Data not found"});
+    }
+  } catch (error) {
+    res
+      .status(500)
+      .json({message: "Error fetching detail data", error: error.message});
   }
 });
 
