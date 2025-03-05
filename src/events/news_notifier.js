@@ -82,7 +82,7 @@ async function sendNewsNotifications(client) {
 
     const newsButton = new ButtonBuilder()
       .setLabel("Baca Selengkapnya")
-      .setURL(`https://jkt48.com/news/detail/id/${beritaId}?lang=id`)
+      .setURL(`https://48intens.com/news/${beritaId}`)
       .setStyle(5);
 
     const buttons = new ActionRowBuilder().addComponents(newsButton);

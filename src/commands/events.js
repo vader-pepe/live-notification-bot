@@ -10,9 +10,9 @@ async function run({interaction}) {
   try {
     // Fetch data from the API
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule/section`
+      `${config.ipAddress}:${config.port}/api/events`
     );
-    const eventSections = response.data;
+    const eventSections = response.data.data;
 
     if (!eventSections || eventSections.length === 0) {
       return interaction.reply({
@@ -27,15 +27,16 @@ async function run({interaction}) {
       .setColor("#FF0000");
 
     eventSections.forEach((section) => {
-      const {hari, tanggal, bulan, events} = section;
+      const {hari, tanggal, bulan, have_event, event_name, event_id} = section;
 
-      events.forEach((event) => {
+      if (have_event) {
+        const eventUrl = `https://48intens.com/schedule`;
         embed.addFields({
-          name: event.eventName,
-          value: `🗓️ ${hari} ${tanggal}/${bulan}/${nowYear}\n🔗 [Link Event](https:jkt48.com${event.eventUrl})`,
+          name: event_name,
+          value: `🗓️ ${hari} ${tanggal}/${bulan}/${nowYear}\n🔗 [Link Event](${eventUrl})`,
           inline: false,
         });
-      });
+      }
     });
 
     await interaction.reply({embeds: [embed], ephemeral: true});

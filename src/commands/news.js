@@ -84,7 +84,7 @@ async function handleSelect(interaction) {
     const button = new ButtonBuilder()
       .setLabel("Baca Selengkapnya")
       .setStyle(5)
-      .setURL(`https://jkt48.com/news/detail/id/${selectedId}?lang=id`);
+      .setURL(`https://48intens.com/news/${selectedId}`);
 
     const row = new ActionRowBuilder().addComponents(button);
 

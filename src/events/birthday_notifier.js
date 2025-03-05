@@ -47,9 +47,10 @@ function createBirthdayEmbed(member) {
 }
 
 function memberButton(member) {
+  const memberId = member.profileLink.split("/").pop().split("?")[0];
   const button = new ButtonBuilder()
     .setLabel("Profile Member")
-    .setURL(`https://jkt48.com${member.profileLink}`)
+    .setURL(`https://48intens.com/member/${memberId}`)
     .setStyle(5);
 
   const buttons = new ActionRowBuilder().addComponents(button);

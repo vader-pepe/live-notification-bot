@@ -52,27 +52,23 @@ async function sendScheduleNotifications(client) {
   const nowYear = new Date().getFullYear();
 
   for (const schedule of schedules) {
-    const {tanggal, hari, bulan, events} = schedule;
+    const {tanggal, hari, have_event, event_name, event_id} = schedule;
 
-    if (events.length > 0) {
-      const event = events[0];
-      const {eventName, eventUrl} = event;
-
-      const existsInDatabase = await checkEventExists(eventName);
+    if (have_event) {
+      const eventUrl = `https://48intens.com/schedule`;
+      const existsInDatabase = await checkEventExists(event_name);
       if (existsInDatabase) {
-        return;
+        continue;
       }
 
       fields.push({
-        name: eventName,
-        value: `🗓️ ${hari}, ${tanggal} ${bulan} ${nowYear}\n🔗 Detail: [Klik disini](https://jkt48.com/${eventUrl})`,
+        name: event_name,
+        value: `🗓️ ${hari}, ${tanggal} ${nowYear}\n🔗 Detail: [Klik disini](${eventUrl})`,
         inline: false,
       });
 
-      await saveEventToDatabase(eventName);
+      await saveEventToDatabase(event_name);
       hasNewSchedules = true;
-
-      break;
     }
   }
 
@@ -170,10 +166,11 @@ async function sendScheduleNotifications(client) {
 async function fetchSchedules() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule/section`
+      `${config.ipAddress}:${config.port}/api/events`
     );
-    return response.data;
+    return response.data.data;
   } catch (error) {
+    console.error("❗ Error fetching schedules:", error);
     return null;
   }
 }

@@ -21,17 +21,18 @@ async function run({interaction}) {
     }
 
     const embed = new EmbedBuilder()
-      .setTitle("Data Ulang Tahun Member Selanjutnya")
-      .setColor("#ff0000");
-
+    .setTitle("Data Ulang Tahun Member Selanjutnya")
+    .setColor("#ff0000");
+    
     birthdays.forEach((member) => {
       const birthYear = member.birthday.split(" ").pop();
+      const memberId = member.profileLink.split("/").pop().split("?")[0];
       const currentYear = new Date().getFullYear();
       const age = currentYear - birthYear; 
 
       embed.addFields({
         name: member.name,
-        value: `📅 **${member.birthday}**\n🎂 Ulang tahun ke-${age}\n🔗 [Profile Member](https://jkt48.com${member.profileLink})\n`,
+        value: `📅 **${member.birthday}**\n🎂 Ulang tahun ke-${age}\n🔗 [Profile Member](https://48intens.com/member/${memberId})\n`,
         inline: false,
       });
     });
