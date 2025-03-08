@@ -244,8 +244,8 @@ async function sendNotifications(client: Client) {
                         if (row) {
                           content =
                             row.role_id === "everyone"
-                              ? `@everyone ${stream.creator.name.split(" ")[0]} Sedang Live IDN nih!`
-                              : `<@&${row.role_id}> ${stream.creator.name.split(" ")[0]} Sedang Live IDN nih!`;
+                              ? `@everyone ${stream.main_name.split(/\/|（/)[0].trim()} Sedang Live Showroom nih!`
+                              : `<@&${row.role_id}> ${stream.main_name.split(/\/|（/)[0].trim()} Sedang Live Showroom nih!`;
                         }
 
                         try {
