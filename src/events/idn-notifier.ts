@@ -333,7 +333,10 @@ async function sendNotifications(client: Client) {
 
                         let content = "";
                         if (row) {
-                          content = row.role_id === "everyone" ? "@everyone" : `<@&${row.role_id}>`;
+                          content =
+                            row.role_id === "everyone"
+                              ? `@everyone ${stream.creator.name.split(" ")[0]} Sedang Live IDN nih!`
+                              : `<@&${row.role_id}> ${stream.creator.name.split(" ")[0]} Sedang Live IDN nih!`;
                         }
 
                         try {
