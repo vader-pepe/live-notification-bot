@@ -29,43 +29,59 @@ async function run({interaction}) {
     );
     const liveData = response.data;
 
+    // Fungsi untuk membuat embed awal (menampilkan semua member)
     const createInitialEmbed = () => {
       return new EmbedBuilder()
         .setTitle("Recent Live Members")
         .setDescription("Berikut adalah daftar recent live members JKT48.")
         .addFields(
-          liveData.map((live) => ({
-            name: live.member.nickname,
-            value: `📅 ${new Date(live.created_at).toLocaleString("id-ID", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-            })}\n🕛 ${formatTimeWithAMPM(new Date(live.created_at))}\n⏱️ ${(
-              live.live_info.duration / 60000
-            ).toFixed(2)} menit\n📺 **${live.type.toUpperCase()}**`,
-            inline: true,
-          }))
+          liveData.map((live) => {
+            const name = live.member?.name || "N/A"; // Berikan nilai default jika name tidak ada
+            const createdDate = new Date(live.created_at);
+            const duration = (live.live_info?.duration / 60000).toFixed(2); // Hitung durasi dalam menit
+
+            return {
+              name: name,
+              value: `📅 ${createdDate.toLocaleString("id-ID", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}\n🕛 ${formatTimeWithAMPM(
+                createdDate
+              )}\n⏱️ ${duration} menit\n📺 **${live.type.toUpperCase()}**`,
+              inline: true,
+            };
+          })
         )
         .setColor("#FF0000");
     };
 
+    // Fungsi untuk membuat dropdown menu
     const createDropdownMenu = () => {
       return new StringSelectMenuBuilder()
         .setCustomId("select_member")
         .setPlaceholder("Pilih member untuk melihat detail")
         .addOptions(
-          liveData.map((live) => ({
-            label: live.member.nickname,
-            value: live.data_id,
-            description: `Live pada ${new Date(live.created_at).toLocaleString(
-              "id-ID",
-              {
+          liveData
+            .filter((live) => {
+              // Check if nickname exists and is a string before calling includes
+              return (
+                live.member.nickname &&
+                typeof live.member.nickname === "string" &&
+                !live.member.nickname.includes("JKT48 Official SHOWROOM")
+              );
+            })
+            .map((live) => ({
+              label: live.member.nickname,
+              value: live.data_id,
+              description: `Live pada ${new Date(
+                live.created_at
+              ).toLocaleString("id-ID", {
                 day: "2-digit",
                 month: "2-digit",
                 year: "numeric",
-              }
-            )} ${formatTimeWithAMPM(new Date(live.created_at))}`,
-          }))
+              })} ${formatTimeWithAMPM(new Date(live.created_at))}`,
+            }))
         );
     };
 
@@ -90,7 +106,7 @@ async function run({interaction}) {
       const formattedGeneration = generation
         .replace("gen", "Gen ")
         .split("-")[0];
-        
+
       let imageUrl;
       if (detailData.type === "showroom") {
         imageUrl = detailData.room_info.img;
