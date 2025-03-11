@@ -1,7 +1,7 @@
 const axios = require("axios");
 require("dotenv").config();
 
-async function getRecentLiveData() {
+async function getRecentLiveData(page = 1) {
   try {
     const url = process.env.API_RECENT_LIVE;
     const response = await axios.get(url);
@@ -37,4 +37,4 @@ async function getRecentLiveData() {
   }
 }
 
-module.exports = { getRecentLiveData };
+module.exports = {getRecentLiveData};
