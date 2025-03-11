@@ -8,7 +8,6 @@ const data = new SlashCommandBuilder()
 
 async function run({interaction}) {
   try {
-    // Fetch data from the API
     const response = await axios.get(
       `${config.ipAddress}:${config.port}/api/events`
     );
@@ -21,21 +20,31 @@ async function run({interaction}) {
       });
     }
 
-    const nowYear = new Date().getFullYear();
+    const now = new Date();
+    const nowYear = now.getFullYear();
+    const nowMonth = now.getMonth(); // 0-11
+    const nowDate = now.getDate();
+
     const embed = new EmbedBuilder()
       .setTitle("Jadwal Event Offair yang Akan Datang")
       .setColor("#FF0000");
 
     eventSections.forEach((section) => {
-      const {hari, tanggal, bulan, have_event, event_name, event_id} = section;
+      const {hari, tanggal, bulan_tahun, have_event, event_name, event_id} =
+        section;
 
       if (have_event) {
-        const eventUrl = `https://48intens.com/schedule`;
-        embed.addFields({
-          name: event_name,
-          value: `🗓️ ${hari} ${tanggal}/${bulan}/${nowYear}\n🔗 [Link Event](${eventUrl})`,
-          inline: false,
-        });
+        const [bulan, tahun] = bulan_tahun.split(" ");
+        const eventDate = new Date(`${bulan} ${tanggal}, ${tahun}`);
+
+        if (eventDate >= now) {
+          const eventUrl = `https://48intens.com/schedule`;
+          embed.addFields({
+            name: event_name,
+            value: `🗓️ ${hari} ${tanggal} ${bulan} ${tahun}\n🔗 [Link Event](${eventUrl})`,
+            inline: false,
+          });
+        }
       }
     });
 

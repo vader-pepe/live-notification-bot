@@ -49,26 +49,32 @@ async function sendScheduleNotifications(client) {
     .setTitle("Berikut adalah jadwal event yang akan datang.");
 
   const fields = [];
-  const nowYear = new Date().getFullYear();
 
   for (const schedule of schedules) {
-    const {tanggal, hari, have_event, event_name, event_id} = schedule;
+    const {tanggal, hari, bulan_tahun, have_event, event_name, event_id} =
+      schedule;
 
     if (have_event) {
-      const eventUrl = `https://48intens.com/schedule`;
-      const existsInDatabase = await checkEventExists(event_name);
-      if (existsInDatabase) {
-        continue;
+      const [bulan, tahun] = bulan_tahun.split(" ");
+      const eventDate = new Date(`${bulan} ${tanggal}, ${tahun}`);
+
+      const now = new Date();
+      if (eventDate >= now) {
+        const eventUrl = `https://48intens.com/schedule`;
+        const existsInDatabase = await checkEventExists(event_name);
+        if (existsInDatabase) {
+          continue;
+        }
+
+        fields.push({
+          name: event_name,
+          value: `🗓️ ${hari}, ${tanggal} ${bulan} ${tahun}\n🔗 Detail: [Klik disini](${eventUrl})`,
+          inline: false,
+        });
+
+        await saveEventToDatabase(event_name);
+        hasNewSchedules = true;
       }
-
-      fields.push({
-        name: event_name,
-        value: `🗓️ ${hari}, ${tanggal} ${nowYear}\n🔗 Detail: [Klik disini](${eventUrl})`,
-        inline: false,
-      });
-
-      await saveEventToDatabase(event_name);
-      hasNewSchedules = true;
     }
   }
 
