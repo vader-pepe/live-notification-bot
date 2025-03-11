@@ -149,10 +149,10 @@ function createEndLiveEmbed(user, startLive, endLive) {
 
   if (user.displayName.includes("Cynthia")) {
     user.image =
-      "https://res.cloudinary.com/dag7esigq/image/upload/v1726244745/Frame_1_suvxgv.png";
+      "https://res.cloudinary.com/dag7esigq/image/upload/Frame_1_1_y2omq5.png";
   } else if (user.displayName.includes("Fiony")) {
     user.image =
-      "https://res.cloudinary.com/dag7esigq/image/upload/v1726244610/Frame_2_zyjuf3.png";
+      "https://res.cloudinary.com/dag7esigq/image/upload/Frame_2_ite5ya.png";
   }
 
   const embed = new EmbedBuilder()
