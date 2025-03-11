@@ -25,7 +25,7 @@ const formatTimeWithAMPM = (date) => {
 async function run({interaction}) {
   try {
     const response = await axios.get(
-      `http://localhost:${config.port}/api/recent-live`
+      `${config.ipAddress}:${config.port}/api/recent-live`
     );
     const liveData = response.data;
 
@@ -197,7 +197,7 @@ async function run({interaction}) {
       if (i.customId === "select_member") {
         const dataId = i.values[0];
         const detailResponse = await axios.get(
-          `http://localhost:${config.port}/api/recent-live/${dataId}`
+          `${config.ipAddress}:${config.port}/api/recent-live/${dataId}`
         );
         const detailData = detailResponse.data;
 
