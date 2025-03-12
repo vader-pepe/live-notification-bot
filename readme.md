@@ -49,7 +49,12 @@ Sebelum menjalankan proyek ini, pastikan Anda memiliki:
 
 Untuk menjalankan bot, gunakan perintah berikut:
 ```bash
+npm i
 node src/index.js
+```
+
+## File Tree
+```bash
 /project-root
 │
 ├── src
