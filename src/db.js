@@ -92,6 +92,18 @@ db.serialize(() => {
       guild_id TEXT
     )`
   );
+
+  db.run(
+    `CREATE TABLE IF NOT EXISTS ramadhan (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slug TEXT UNIQUE,
+      title TEXT,
+      description TEXT,
+      date TEXT,
+      members TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`
+  );
 });
 
 module.exports = db;

@@ -217,6 +217,7 @@ antiCrash
       require("./events/today_schedule_notifier")(client);
       require("./events/fifteenminute_notifier")(client);
       require("./events/monthBirthday_notifier")(client);
+      require("./events/ramadhan_notifier")(client);
     });
 
     client.login(process.env.BOT_TOKEN).catch((error) => {

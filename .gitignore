@@ -3,3 +3,5 @@ node_modules
 whitelist.db
 error.log
 google-drive.json
+whitelist_backup_1.db
+whitelist_backup_2.db
