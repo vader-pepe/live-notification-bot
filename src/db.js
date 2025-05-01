@@ -55,7 +55,9 @@ db.serialize(() => {
   db.run(
     `CREATE TABLE IF NOT EXISTS events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      eventName TEXT UNIQUE
+      date TEXT,
+      event_name TEXT,
+      created_at TEXT
     )`
   );
 
