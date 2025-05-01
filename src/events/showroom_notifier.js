@@ -50,7 +50,7 @@ function getTimeOfDay(hour) {
 }
 
 const nameReplacements = [
-  {original: "Fiony", replacement: "Cepio"},
+  {original: "Fiony", replacement: "Cepio ❤️"},
   {original: "Adel", replacement: "Dedel"},
   {original: "Gita", replacement: "Gita 🥶"},
   {original: "Gracia", replacement: "Ci Gre"},
@@ -62,7 +62,7 @@ const nameReplacements = [
   {original: "Indah", replacement: "Kak Indah"},
   {original: "Kathrina", replacement: "Atin"},
   {original: "Greesel", replacement: "Icel"},
-  {original: "Cynthia", replacement: "Ciput"},
+  {original: "Cynthia", replacement: "Ciput ❤️"},
   {original: "Erine", replacement: "Erni"},
   {original: "Delynn", replacement: "Deyinn"},
   {original: "Feni", replacement: "Teh Mpen"},
@@ -77,6 +77,8 @@ const nameReplacements = [
   {original: "Muthe", replacement: "Mumuchang"},
   {original: "Nayla", replacement: "Nayra"},
   {original: "Regie", replacement: "Reji"},
+  {original: "Mikaela", replacement: "Mikaela ❤️"},
+  {original: "Virgi", replacement: "Virgi ❤️"},
   {original: "JKT48 Official SHOWROOM", replacement: "Om JOT"},
 ];
 
