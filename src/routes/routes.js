@@ -187,7 +187,7 @@ router.get("/member", async (req, res) => {
 router.get("/banners", async (req, res) => {
   try {
     const html = await fetchBannerData(
-      "https://takagi.sousou-no-frieren.workers.dev"
+      "https://jkt48.com"
     );
     const banners = parseBannerData(html);
     res.status(200).json({success: true, data: banners});
