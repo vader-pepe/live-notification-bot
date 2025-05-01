@@ -36,11 +36,7 @@ async function sendScheduleNotifications(client) {
   }
 
   let hasNewSchedules = false;
-  const embed = new EmbedBuilder()
-    .setColor("#ff0000")
-    .setFooter({ text: "JKT48 Live Notification" });
-
-  const fields = [];
+  const embedMessages = []; // Array untuk menyimpan semua embed messages
 
   for (const schedule of schedules) {
     const existsInDatabase = await checkScheduleExists(
@@ -88,20 +84,61 @@ async function sendScheduleNotifications(client) {
     ];
     const monthName = monthNames[monthIndex];
 
+    const formattedDate = `${day} ${monthName} ${year}`;
     const memberNicknames = schedule.members
       .map(getNickname)
       .filter((nickname) => nickname)
       .join(", ");
 
     const birthday = schedule.birthday || "";
+    let symbol = "```";
 
-    fields.push({
-      name: schedule.setlist,
-      value: `🕒 ${time}\n🗓️ ${day} ${monthName} ${year}${
-        birthday ? `\n🎂 ${birthday}` : ""
-      }${memberNicknames ? `\n👥 ${memberNicknames}` : ""}`,
-      inline: false,
-    });
+    // Buat embed baru untuk setiap jadwal
+    const embed = new EmbedBuilder()
+      .setColor("#ff0000")
+      .setTitle(
+        schedule.members.length > 0
+          ? "Berikut adalah list member yang akan tampil pada show yang akan mendatang!"
+          : "Berikut adalah jadwal show yang akan datang!"
+      )
+      .setFooter({text: "JKT48 Live Notification"});
+
+    // Tambahkan fields untuk jadwal ini
+    embed.addFields(
+      {
+        name: "🎪 Setlist",
+        value: symbol + schedule.setlist + symbol,
+        inline: true,
+      },
+      {
+        name: "📅 Date",
+        value: symbol + formattedDate + symbol,
+        inline: true,
+      },
+      {
+        name: "🕒 Time",
+        value: symbol + time + symbol,
+        inline: true,
+      }
+    );
+
+    if (memberNicknames) {
+      embed.addFields({
+        name: "👸 Members",
+        value: symbol + memberNicknames + symbol,
+        inline: true,
+      });
+    }
+
+    if (birthday) {
+      embed.addFields({
+        name: "🎂 Birthday",
+        value: symbol + birthday + symbol,
+        inline: true,
+      });
+    }
+
+    embedMessages.push(embed); // Tambahkan embed ke array
 
     await saveScheduleToDatabase(
       schedule.setlist,
@@ -111,42 +148,55 @@ async function sendScheduleNotifications(client) {
     hasNewSchedules = true;
   }
 
-  if (hasNewSchedules) {
-    const existingSchedules = await getExistingSchedulesFromDatabase();
-    const hasMembers = schedules.some((schedule) => {
-      return schedule.members.length > 0;
-    });
-
-    embed.setTitle(
-      hasMembers
-        ? "Berikut adalah list member yang akan tampil pada show yang akan datang."
-        : "Berikut adalah jadwal show yang akan datang."
-    );
-  }
-
-  if (hasNewSchedules) {
-    embed.addFields(fields);
-
+  if (hasNewSchedules && embedMessages.length > 0) {
     const handledGuilds = new Set();
 
-    for (const { guild_id, channel_id } of scheduleChannels) {
+    // Kirim ke channel schedule
+    for (const {guild_id, channel_id} of scheduleChannels) {
       const channel = await fetchChannel(client, channel_id);
       if (channel) {
-        await sendEmbed(channel, embed);
+        for (const embed of embedMessages) {
+          await sendEmbed(channel, embed);
+        }
         handledGuilds.add(guild_id);
+      } else {
+        // Jika channel tidak ditemukan, hapus dari database
+        try {
+          await removeFromScheduleId(channel_id);
+        } catch (error) {
+          console.error(
+            `❗ Error removing invalid channel ${channel_id}:`,
+            error
+          );
+        }
       }
     }
 
+    // Kirim ke channel whitelist
     for (const channelId of whitelistedChannels) {
       const channel = await fetchChannel(client, channelId);
       if (channel && !handledGuilds.has(channel.guild.id)) {
-        await sendEmbed(channel, embed);
+        for (const embed of embedMessages) {
+          await sendEmbed(channel, embed);
+        }
+      } else if (!channel) {
+        // Jika channel tidak ditemukan, hapus dari database
+        try {
+          await removeFromWhitelist(channelId);
+        } catch (error) {
+          console.error(
+            `❗ Error removing invalid channel ${channelId}:`,
+            error
+          );
+        }
       }
     }
 
-    console.log("❗ Jadwal baru telah berhasil dikirim.");
+    console.log(
+      `❗ ${embedMessages.length} jadwal baru telah berhasil dikirim.`
+    );
 
-    // Send to webhooks
+    // Kirim ke webhooks
     db.all("SELECT url FROM webhook", async (err, webhookRows) => {
       if (err) {
         console.error("❗ Error retrieving webhook URLs:", err.message);
@@ -159,14 +209,18 @@ async function sendScheduleNotifications(client) {
 
       for (const webhook of webhookRows) {
         try {
-          await axios.post(webhook.url, {
-            content: null,
-            embeds: [embed.toJSON()],
-            username: config.webhook.name,
-            avatar_url: config.webhook.avatar,
-          });
+          for (const embed of embedMessages) {
+            await axios.post(webhook.url, {
+              content: null,
+              embeds: [embed.toJSON()],
+              username: config.webhook.name,
+              avatar_url: config.webhook.avatar,
+            });
+          }
         } catch (error) {
-          console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`);
+          console.error(
+            `❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`
+          );
         }
       }
     });
@@ -277,6 +331,25 @@ async function sendEmbed(channel, embed) {
       `Error sending embed to channel ${channel.id}:`,
       error.message
     );
+
+    // Cek apakah error karena Unknown Channel
+    if (
+      error.code === 10003 || // Unknown Channel
+      error.code === 10004 || // Unknown Guild
+      error.message.includes("Unknown Channel") ||
+      error.message.includes("Missing Access")
+    ) {
+      try {
+        // Hapus channel dari kedua tabel
+        await removeFromWhitelist(channel.id);
+        await removeFromScheduleId(channel.id);
+      } catch (dbError) {
+        console.error(
+          "❗ Error removing invalid channel from database:",
+          dbError
+        );
+      }
+    }
   }
 }
 
@@ -299,6 +372,50 @@ async function deleteOldSchedules() {
 }
 
 setInterval(deleteOldSchedules, 24 * 60 * 60 * 1000);
+
+// Tambahkan fungsi baru untuk menghapus channel dari whitelist
+async function removeFromWhitelist(channelId) {
+  return new Promise((resolve, reject) => {
+    db.run(`DELETE FROM whitelist WHERE channel_id = ?`, [channelId], (err) => {
+      if (err) {
+        console.error(
+          `❗ Failed to remove channel ${channelId} from whitelist:`,
+          err
+        );
+        reject(err);
+      } else {
+        console.log(
+          `❗ Channel ${channelId} telah dihapus dari whitelist karena tidak valid.`
+        );
+        resolve();
+      }
+    });
+  });
+}
+
+// Tambahkan fungsi baru untuk menghapus channel dari schedule_id
+async function removeFromScheduleId(channelId) {
+  return new Promise((resolve, reject) => {
+    db.run(
+      `DELETE FROM schedule_id WHERE channel_id = ?`,
+      [channelId],
+      (err) => {
+        if (err) {
+          console.error(
+            `❗ Failed to remove channel ${channelId} from schedule_id:`,
+            err
+          );
+          reject(err);
+        } else {
+          console.log(
+            `❗ Channel ${channelId} telah dihapus dari schedule_id karena tidak valid.`
+          );
+          resolve();
+        }
+      }
+    );
+  });
+}
 
 module.exports = (client) => {
   setInterval(() => sendScheduleNotifications(client), 60000);

@@ -115,7 +115,6 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
   const embed = new EmbedBuilder().setTitle(title).setColor("#ff0000");
 
   if (showSchedules.length > 0) {
-    let showDescriptions = "**Jadwal Show:**\n";
     showSchedules.forEach((schedule) => {
       const showInfoParts = schedule.showInfo.split("Show");
       const datePart = showInfoParts[0].trim();
@@ -133,41 +132,80 @@ function createCombinedEmbed(showSchedules, events, totalShows, totalEvents) {
       )} ${monthNames[parseInt(dateParts[1], 10) - 1]} ${dateParts[2]}`;
 
       const birthday = schedule.birthday || "";
+      let symbol = "```";
       const memberNicknames = schedule.members
         .map(getNickname)
         .filter((nickname) => nickname)
         .join(", ");
 
-      showDescriptions += `- **${
-        schedule.setlist
-      }** \n🕒 ${timePart} \n🗓️ ${formattedDate}${
-        birthday ? ` \n🎂 ${birthday}` : ""
-      }${memberNicknames ? ` \n👥 ${memberNicknames}` : ""}\n`;
+      embed.addFields(
+        {
+          name: "🎪 Setlist",
+          value: symbol + schedule.setlist + symbol,
+          inline: true,
+        },
+        {
+          name: "📅 Date",
+          value: symbol + formattedDate + symbol,
+          inline: true,
+        },
+        {
+          name: "🕒 Time",
+          value: symbol + timePart + symbol,
+          inline: true,
+        }
+      );
+
+      if (memberNicknames) {
+        embed.addFields({
+          name: "👸 Members",
+          value: symbol + memberNicknames + symbol,
+          inline: true,
+        });
+      }
+
+      if (birthday) {
+        embed.addFields({
+          name: "🎂 Birthday",
+          value: symbol + birthday + symbol,
+          inline: true,
+        });
+      }
     });
-    embed.setDescription(showDescriptions);
   }
 
   if (events.length > 0) {
     events.forEach((event) => {
-      const eventDescription = event.events
-        .map((e) => {
-          const date = new Date();
-          const dateEvent = event.tanggal;
-          const dayName = event.hari;
-          const monthName = event.bulan;
-          const year = date.getFullYear();
+      event.events.forEach((e) => {
+        const date = new Date();
+        const dateEvent = event.tanggal;
+        const dayName = event.hari;
+        const monthName = event.bulan;
+        const year = date.getFullYear();
 
-          return `**${e.eventName}**\n🗓️ ${dayName}, ${dateEvent} ${monthName} ${year}\n🔗 Detail: [Klik disini](http://jkt48.com${e.eventUrl})`;
-        })
-        .join("\n\n");
-      embed.addFields({
-        name: `Event pada hari ini!`,
-        value: eventDescription,
+        embed.addFields(
+          {
+            name: "🎪 Event Name",
+            value: symbol + e.eventName + symbol,
+            inline: true,
+          },
+          {
+            name: "📅 Date",
+            value:
+              symbol + `${dayName}, ${dateEvent} ${monthName} ${year}` + symbol,
+            inline: true,
+          },
+          {
+            name: "🔗 Detail",
+            value: `[Klik disini](http://jkt48.com${e.eventUrl})`,
+            inline: true,
+          }
+        );
       });
     });
   }
 
-  embed.setFooter({ text: "Jadwal dan Event JKT48 | JKT48 Live Notification" });
+  embed.setFooter({text: "Jadwal dan Event JKT48 | JKT48 Live Notification"});
   return embed;
 }
 
@@ -234,11 +272,11 @@ async function sendTodayCombinedNotifications(client) {
 
       const handledGuilds = new Set();
 
-      for (const { guild_id, channel_id } of scheduleRows) {
+      for (const {guild_id, channel_id} of scheduleRows) {
         try {
           const channel = await client.channels.fetch(channel_id);
           if (channel) {
-            await channel.send({ embeds: [embed] });
+            await channel.send({embeds: [embed]});
             handledGuilds.add(guild_id);
           } else {
             console.log(`❗ Channel dengan ID ${channel_id} tidak ditemukan.`);
@@ -257,11 +295,11 @@ async function sendTodayCombinedNotifications(client) {
           return;
         }
 
-        for (const { channel_id } of whitelistRows) {
+        for (const {channel_id} of whitelistRows) {
           try {
             const channel = await client.channels.fetch(channel_id);
             if (channel && !handledGuilds.has(channel.guild.id)) {
-              await channel.send({ embeds: [embed] });
+              await channel.send({embeds: [embed]});
             }
           } catch (error) {
             console.error(
@@ -293,14 +331,16 @@ async function sendTodayCombinedNotifications(client) {
           avatar_url: config.webhook.avatar,
         });
       } catch (error) {
-        console.error(`❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`);
+        console.error(
+          `❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`
+        );
       }
     }
   });
 }
 
 module.exports = (client) => {
-  schedule.scheduleJob("0 7 * * *", () =>
+  schedule.scheduleJob("25 13 * * *", () =>
     sendTodayCombinedNotifications(client)
   );
 };
