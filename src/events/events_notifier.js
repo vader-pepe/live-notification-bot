@@ -1,245 +1,163 @@
+// src/events_notifier.js
+
 const {EmbedBuilder} = require("discord.js");
 const axios = require("axios");
 const db = require("../db");
 const config = require("../main/config");
-const fs = require("fs");
-const rateLimit = require("express-rate-limit");
-const express = require("express");
-const app = express();
 
-const limiter = rateLimit({
-  windowMs: 20 * 60 * 1000,
-  max: 200,
-  handler: (req, res) => {
-    const logMessage = `Rate limit reached for IP ${req.ip}.`;
-    sendLogToDiscord(logMessage, "Warning");
-
-    res.status(429).send({
-      message:
-        "Too many requests from this IP, please try again after 20 minutes.",
-    });
-  },
-});
-
-app.use(limiter);
-
-let membersData = [];
-fs.readFile("src/member.json", "utf8", (err, data) => {
-  if (err) {
-    console.error("Error reading member data:", err);
-    return;
-  }
-  membersData = JSON.parse(data);
-});
-
-function getNickname(name) {
-  const member = membersData.find((m) => m.name === name);
-  return member && member.nicknames.length > 0 ? member.nicknames[0] : null;
-}
-
-async function sendScheduleNotifications(client) {
-  const schedules = await fetchSchedules();
-  if (!schedules || schedules.length === 0) {
-    return null;
-  }
-
-  let hasNewSchedules = false;
-  const embed = new EmbedBuilder()
-    .setColor("#ff0000")
-    .setTitle("Berikut adalah jadwal event yang akan datang.");
-
-  const fields = [];
-
-  for (const schedule of schedules) {
-    const {tanggal, hari, bulan_tahun, have_event, event_name, event_id} =
-      schedule;
-
-    if (have_event) {
-      const [bulan, tahun] = bulan_tahun.split(" ");
-      const eventDate = new Date(`${bulan} ${tanggal}, ${tahun}`);
-
-      const now = new Date();
-      if (eventDate >= now) {
-        const eventUrl = `https://48intens.com/schedule`;
-        const existsInDatabase = await checkEventExists(event_name);
-        if (existsInDatabase) {
-          continue;
-        }
-
-        fields.push({
-          name: event_name,
-          value: `🗓️ ${hari}, ${tanggal} ${bulan} ${tahun}\n🔗 Detail: [Klik disini](${eventUrl})`,
-          inline: false,
-        });
-
-        await saveEventToDatabase(event_name);
-        hasNewSchedules = true;
-      }
-    }
-  }
-
-  if (hasNewSchedules) {
-    embed.addFields(fields);
-
-    db.serialize(() => {
-      db.all(
-        `SELECT guild_id, channel_id FROM schedule_id`,
-        async (err, scheduleRows) => {
-          if (err) {
-            console.error("❗ Error retrieving schedule channels:", err);
-            return;
-          }
-
-          const handledGuilds = new Set();
-
-          for (const {guild_id, channel_id} of scheduleRows) {
-            try {
-              const channel = await client.channels.fetch(channel_id);
-              if (channel) {
-                await channel.send({embeds: [embed]});
-                handledGuilds.add(guild_id);
-              } else {
-                console.log(
-                  `❗ Channel dengan ID ${channel_id} tidak ditemukan.`
-                );
-              }
-            } catch (error) {
-              console.error(
-                `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
-              );
-            }
-          }
-
-          db.all(
-            "SELECT channel_id FROM whitelist",
-            async (err, whitelistRows) => {
-              if (err) {
-                console.error("❗ Error retrieving whitelist channels:", err);
-                return;
-              }
-
-              for (const {channel_id} of whitelistRows) {
-                try {
-                  const channel = await client.channels.fetch(channel_id);
-                  if (channel && !handledGuilds.has(channel.guild.id)) {
-                    await channel.send({embeds: [embed]});
-                  }
-                } catch (error) {
-                  console.error(
-                    `❗ Gagal mengirim pengumuman ke channel ${channel_id}: ${error.message}`
-                  );
-                }
-              }
-            }
-          );
-        }
-      );
-    });
-
-    // Handle webhooks
-    db.all("SELECT url FROM webhook", async (err, webhookRows) => {
-      if (err) {
-        console.error("❗ Error retrieving webhook URLs:", err.message);
-        return;
-      }
-
-      if (webhookRows.length === 0) {
-        return null;
-      }
-
-      for (const webhook of webhookRows) {
-        try {
-          await axios.post(webhook.url, {
-            content: null,
-            embeds: [embed.toJSON()],
-            username: config.webhook.name,
-            avatar_url: config.webhook.avatar,
-          });
-        } catch (error) {
-          console.error(
-            `❗ Gagal mengirim notifikasi ke webhook ${webhook.url}: ${error.message}`
-          );
-        }
-      }
-    });
-
-    console.log("❗ Jadwal baru telah dikirim.");
-  } else {
-    return null;
-  }
-}
-
-async function fetchSchedules() {
+async function fetchEvents() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/events`
+      `${config.ipAddress}:${config.port}/api/schedule/section`
     );
-    return response.data.data;
+    return response.data;
   } catch (error) {
-    console.error("❗ Error fetching schedules:", error);
     return null;
   }
 }
 
-async function getWhitelistedChannels() {
-  return new Promise((resolve, reject) => {
-    db.all("SELECT channel_id FROM whitelist", (err, rows) => {
-      if (err) {
-        console.error("❗ Failed to retrieve whitelisted channels", err);
-        return reject(err);
-      }
-      resolve(rows.map((row) => row.channel_id));
-    });
-  });
-}
-
-async function checkEventExists(eventName) {
+async function checkEventExists(date, eventName) {
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT 1 FROM events WHERE eventName = ? LIMIT 1`,
-      [eventName],
+      `SELECT 1 FROM events WHERE date = ? AND event_name = ? LIMIT 1`,
+      [date, eventName],
       (err, row) => {
-        if (err) {
-          console.error("❗ Error checking event existence:", err);
-          return reject(err);
-        }
+        if (err) return reject(err);
         resolve(!!row);
       }
     );
   });
 }
 
-async function saveEventToDatabase(eventName) {
-  db.serialize(() => {
-    db.run(
-      `CREATE TABLE IF NOT EXISTS events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        eventName TEXT
-      )`
-    );
-
-    db.run(`INSERT INTO events (eventName) VALUES (?)`, [eventName], (err) => {
-      if (err) {
-        console.error("❗ Gagal menyimpan event baru", err);
-      } else {
-        console.log(`❗ Event ${eventName} berhasil disimpan!`);
-      }
-    });
-  });
+async function saveEventToDatabase(date, eventName) {
+  const createdAt = new Date().toISOString();
+  db.run(
+    `INSERT INTO events (date, event_name, created_at) VALUES (?, ?, ?)`,
+    [date, eventName, createdAt],
+    (err) => {
+      if (err) console.error("❗ Gagal menyimpan event:", err.message);
+    }
+  );
 }
 
-async function getPrioritizedChannels() {
+async function getWhitelistedChannels() {
   return new Promise((resolve, reject) => {
-    db.all("SELECT channel_id FROM schedule_id", (err, rows) => {
-      if (err) {
-        console.error("❗ Failed to retrieve prioritized channels", err);
-        return reject(err);
-      }
+    db.all("SELECT channel_id FROM whitelist", (err, rows) => {
+      if (err) return reject(err);
       resolve(rows.map((row) => row.channel_id));
     });
   });
 }
 
+async function getScheduleChannels() {
+  return new Promise((resolve, reject) => {
+    db.all("SELECT guild_id, channel_id FROM schedule_id", (err, rows) => {
+      if (err) return reject(err);
+      resolve(rows);
+    });
+  });
+}
+
+async function fetchChannel(client, channelId) {
+  try {
+    return await client.channels.fetch(channelId);
+  } catch (error) {
+    console.error(`❗ Gagal mengambil channel ${channelId}:`, error.message);
+    return null;
+  }
+}
+
+async function sendEmbed(channel, embed) {
+  try {
+    await channel.send({embeds: [embed]});
+  } catch (error) {
+    console.error(`❗ Gagal mengirim embed ke ${channel.id}:`, error.message);
+  }
+}
+
+async function deleteOldEvents() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  db.run(
+    `DELETE FROM events WHERE created_at < ?`,
+    [cutoff.toISOString()],
+    (err) => {
+      if (err) console.error("❗ Gagal hapus event lama:", err.message);
+    }
+  );
+}
+
+async function sendEventNotifications(client) {
+  const events = await fetchEvents();
+  if (!events) return;
+
+  const scheduleChannels = await getScheduleChannels();
+  const whitelistChannels = await getWhitelistedChannels();
+
+  const embed = new EmbedBuilder()
+    .setColor("#ff0000")
+    .setTitle("🎉 Berikut adalah event yang akan datang")
+    .setFooter({text: "Events JKT48 | JKT48 Live Notification"});
+
+  let hasNewEvent = false;
+
+  for (const eventDate of events) {
+    const date = `${eventDate.tanggal} ${eventDate.bulan}`;
+    for (const event of eventDate.events) {
+      const exists = await checkEventExists(date, event.eventName);
+      if (exists) continue;
+
+      embed.addFields({
+        name: event.eventName,
+        value: `🗓️ ${eventDate.hari}, ${eventDate.tanggal} ${eventDate.bulan}\n🔗 [Lihat Detail](https://48intens.com/schedule)`,
+        inline: false,
+      });
+
+      await saveEventToDatabase(date, event.eventName);
+      hasNewEvent = true;
+    }
+  }
+
+  if (!hasNewEvent) return;
+
+  const handledGuilds = new Set();
+
+  for (const {guild_id, channel_id} of scheduleChannels) {
+    const channel = await fetchChannel(client, channel_id);
+    if (channel) {
+      await sendEmbed(channel, embed);
+      handledGuilds.add(guild_id);
+    }
+  }
+
+  for (const channelId of whitelistChannels) {
+    const channel = await fetchChannel(client, channelId);
+    if (channel && !handledGuilds.has(channel.guild.id)) {
+      await sendEmbed(channel, embed);
+    }
+  }
+
+  db.all("SELECT url FROM webhook", async (err, rows) => {
+    if (err || rows.length === 0) return;
+    for (const {url} of rows) {
+      try {
+        await axios.post(url, {
+          content: null,
+          embeds: [embed.toJSON()],
+          username: config.webhook.name,
+          avatar_url: config.webhook.avatar,
+        });
+      } catch (err) {
+        console.error(`❗ Gagal kirim ke webhook ${url}:`, err.message);
+      }
+    }
+  });
+
+  console.log("✅ Event baru berhasil dikirim.");
+}
+
+setInterval(deleteOldEvents, 24 * 60 * 60 * 1000);
+
 module.exports = (client) => {
-  setInterval(() => sendScheduleNotifications(client), 30000);
+  setInterval(() => sendEventNotifications(client), 60000);
 };
