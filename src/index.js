@@ -25,7 +25,7 @@ app.get("/", (req, res) => {
 });
 
 app.listen(config.port, config.ipAddress, () => {
-  console.log(`Server is running at http://localhost:${config.port}`);
+  console.log(`Server is running at ${config.ipAddress}:${config.port}`);
 });
 
 antiCrash
@@ -149,6 +149,11 @@ antiCrash
         ) {
           await handleSelect(interaction);
         }
+
+        if (interaction.isStringSelectMenu() && interaction.customId === "select_gen" || interaction.customId === "select_member") {
+          const {handleSelect} = require("./commands/member");
+          await handleSelect(interaction);
+        }
       } catch (error) {
         console.error("❗ Error handling interaction:", error);
 
@@ -217,7 +222,7 @@ antiCrash
       require("./events/today_schedule_notifier")(client);
       require("./events/fifteenminute_notifier")(client);
       require("./events/monthBirthday_notifier")(client);
-      require("./events/ramadhan_notifier")(client);
+      // require("./events/ramadhan_notifier")(client);
     });
 
     client.login(process.env.BOT_TOKEN).catch((error) => {
