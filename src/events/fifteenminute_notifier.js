@@ -22,7 +22,7 @@ function getNickname(name) {
 async function fetchShowSchedule() {
   try {
     const response = await axios.get(
-      `${config.ipAddress}:${config.port}/api/schedule`
+      `http://localhost:${config.port}/api/schedule`
     );
     return response.data;
   } catch (error) {
@@ -86,54 +86,94 @@ async function sendFifteenMinuteNotifications(client) {
   const waktu = getTimeOfDay(new Date().getHours());
 
   const embed = new EmbedBuilder()
-    .setTitle(
-      `Selamat ${waktu}.. Sudah siapkah kalian menonton show hari ini? Show akan dimulai dalam 15 menit!`
-    )
+    .setTitle(`Selamat ${waktu}.. Show akan dimulai dalam 15 menit!`)
     .setColor("#ff0000");
 
-  let showDescriptions = "";
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agt",
+    "Sept",
+    "Okt",
+    "Nov",
+    "Des",
+  ];
+
+  const dayNames = [
+    "Minggu",
+    "Senin",
+    "Selasa",
+    "Rabu",
+    "Kamis",
+    "Jumat",
+    "Sabtu",
+  ];
 
   upcomingShows.forEach((schedule) => {
+    const showInfoParts = schedule.showInfo.split("Show");
+    const datePart = showInfoParts[0].trim();
+    const timePart = showInfoParts[1] ? showInfoParts[1].trim() : "TBD";
+
+    const dateParts = datePart.split(", ")[1].split(".");
+    const scheduleDate = new Date(
+      dateParts[2],
+      parseInt(dateParts[1], 10) - 1,
+      parseInt(dateParts[0], 10)
+    );
+    const formattedDate = `${dayNames[scheduleDate.getDay()]} ${parseInt(
+      dateParts[0],
+      10
+    )} ${monthNames[parseInt(dateParts[1], 10) - 1]} ${dateParts[2]}`;
+
+    const birthday = (schedule.birthday || [])
+      .filter((name) => membersData.some((m) => m.name === name))
+      .join(", ");
+    let symbol = "```";
     const memberNicknames = schedule.members
       .map(getNickname)
       .filter((nickname) => nickname)
       .join(", ");
 
-    const birthdayMembers = (schedule.birthday || [])
-      .filter((name) => membersData.some((m) => m.name === name))
-      .join(", ");
+    embed.addFields(
+      {
+        name: "🎪 Setlist",
+        value: symbol + schedule.setlist + symbol,
+        inline: true,
+      },
+      {
+        name: "📅 Date",
+        value: symbol + formattedDate + symbol,
+        inline: true,
+      },
+      {
+        name: "🕒 Time",
+        value: symbol + timePart + symbol,
+        inline: true,
+      }
+    );
 
-    const time = schedule.showInfo.split("Show")[1].trim();
-    const day = formattedNow.split(".")[0];
-    const monthIndex = parseInt(formattedNow.split(".")[1], 10) - 1;
-    const year = formattedNow.split(".")[2];
-    const monthNames = [
-      "Jan",
-      "Feb",
-      "Mar",
-      "Apr",
-      "Mei",
-      "Juni",
-      "Juli",
-      "Agt",
-      "Sept",
-      "Okt",
-      "Nov",
-      "Des",
-      "Des",
-    ];
-    const monthName = monthNames[monthIndex];
+    if (memberNicknames) {
+      embed.addFields({
+        name: "👸 Members",
+        value: symbol + memberNicknames + symbol,
+        inline: true,
+      });
+    }
 
-    embed.addFields({
-      name: schedule.setlist,
-      value:
-        `🕒 ${time}\n🗓️ ${day} ${monthName} ${year}` +
-        (birthdayMembers ? `\n🎂 ${birthdayMembers}` : "") +
-        (memberNicknames ? `\n👥 ${memberNicknames}` : ""),
-    });
+    if (birthday) {
+      embed.addFields({
+        name: "🎂 Birthday",
+        value: symbol + birthday + symbol,
+        inline: true,
+      });
+    }
   });
 
-  embed.setDescription(showDescriptions || "**Jadwal Show**");
   embed.setFooter({text: "Jadwal dan Event JKT48 | JKT48 Live Notification"});
 
   // Send to Discord channels
