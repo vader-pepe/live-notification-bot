@@ -21,8 +21,17 @@ try {
 
 const getGenerations = () => {
   const gens = new Set();
-  membersData.forEach((m) => gens.add(m.generation));
-  return Array.from(gens).sort();
+  membersData.forEach((m) => gens.add(m.generation.trim()));
+  return Array.from(gens)
+    .map((g) => {
+      const match = g.match(/\d+/);
+      return {
+        raw: g,
+        num: match ? parseInt(match[0]) : Number.MAX_SAFE_INTEGER,
+      };
+    })
+    .sort((a, b) => a.num - b.num)
+    .map((g) => g.raw);
 };
 
 const getMembersByGeneration = (gen) => {
@@ -33,8 +42,8 @@ const getMemberByName = (name) => {
   return membersData.find((m) => m.name === name);
 };
 
-async function run({interaction}) {
-  await interaction.deferReply({ephemeral: true});
+async function run({ interaction }) {
+  await interaction.deferReply({ ephemeral: true });
 
   const generations = getGenerations();
 
@@ -67,6 +76,15 @@ async function handleSelect(interaction) {
   if (customId === "select_gen") {
     const members = getMembersByGeneration(selectedValue);
 
+    const memberListEmbed = new EmbedBuilder()
+      .setTitle(`Daftar Member Generasi ${selectedValue}`)
+      .setDescription(
+        members.length > 0
+          ? members.map((m, i) => `${i + 1}. **${m.name}**`).join("\n")
+          : "Tidak ada member pada generasi ini."
+      )
+      .setColor("#ff0000");
+
     const memberSelect = new StringSelectMenuBuilder()
       .setCustomId("select_member")
       .setPlaceholder(`Pilih member dari ${selectedValue}`)
@@ -80,7 +98,8 @@ async function handleSelect(interaction) {
     const row = new ActionRowBuilder().addComponents(memberSelect);
 
     await interaction.editReply({
-      content: `Pilih member dari ${selectedValue}:`,
+      content: null,
+      embeds: [memberListEmbed],
       components: [row],
     });
   } else if (customId === "select_member") {
@@ -89,12 +108,12 @@ async function handleSelect(interaction) {
 
     const embed = new EmbedBuilder()
       .setTitle(member.name)
-      .setThumbnail(member.img)
+      .setImage(member.img)
       .setDescription(`${member.description}\n\n${member.jikosokai}`)
       .addFields(
-        {name: "Nickname", value: member.nicknames.join(", "), inline: true},
-        {name: "Height", value: member.height, inline: true},
-        {name: "Generation", value: member.generation, inline: true},
+        { name: "Nickname", value: member.nicknames.join(", "), inline: true },
+        { name: "Height", value: member.height, inline: true },
+        { name: "Generation", value: member.generation, inline: true },
         {
           name: "Video Perkenalan",
           value: `https://youtu.be/${member.video_perkenalan}`,
@@ -109,7 +128,7 @@ async function handleSelect(interaction) {
         }
       )
       .setColor("#ff0000")
-      .setFooter({text: `Detail Member | ${member.name}`});
+      .setFooter({ text: `Detail Member | ${member.name}` });
 
     await interaction.editReply({
       content: null,
