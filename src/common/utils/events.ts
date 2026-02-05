@@ -1,5 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { env } from "./envConfig";
+import type { FlareSolved } from "./news";
 
 interface Event {
   bulan_tahun: string;
@@ -13,14 +15,23 @@ interface Event {
 }
 
 export const fetchEvents = async () => {
-  const url = "https://jkt48.com/calendar/list?lang=id";
+  // const url = "https://jkt48.com/calendar/list?lang=id";
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
 
-  try {
-    const response = await axios.get<string>(url);
-    return response.data;
-  } catch (error) {
-    return null;
-  }
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: "https://jkt48.com/calendar/list?lang=id",
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data.solution.response;
 };
 
 export const parseEvents = (html: string) => {

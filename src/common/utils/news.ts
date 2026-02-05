@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { env } from "./envConfig";
 
 export type ParsedNews = ReturnType<typeof parseNewsData>;
 
@@ -15,6 +16,54 @@ interface NewsDetails {
   tanggal: string;
   konten: string;
   gambar?: string[] | null;
+}
+
+export interface FlareSolved {
+  solution: Solution;
+  status: string;
+  message: string;
+  startTimestamp: number;
+  endTimestamp: number;
+  version: string;
+}
+
+export interface Solution {
+  url: string;
+  status: number;
+  headers: Headers;
+  response: string;
+  cookies: Cooky[];
+  userAgent: string;
+  turnstile_token: string;
+}
+
+export interface Cooky {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+  expires: number;
+  size: number;
+  httpOnly: boolean;
+  secure: boolean;
+  session: boolean;
+  sameSite: string;
+}
+
+export interface Headers {
+  status: string;
+  date: string;
+  expires: string;
+  "cache-control": string;
+  "content-type": string;
+  "strict-transport-security": string;
+  p3p: string;
+  "content-encoding": string;
+  server: string;
+  "content-length": string;
+  "x-xss-protection": string;
+  "x-frame-options": string;
+  "set-cookie": string;
 }
 
 const parseNewsDetail = (html: string) => {
@@ -67,15 +116,24 @@ const parseNewsDetail = (html: string) => {
 };
 
 export const fetchNewsData = async () => {
-  const url = "https://jkt48.com/news/list?lang=id";
+  // const url = "https://jkt48.com/news/list?lang=id";
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
 
   try {
-    const response = await axios.get<string>(url);
-    const data = response.data;
-
-    if (typeof data !== "string") {
-      throw new Error("Expected a string response from the server");
-    }
+    const response = await axios.post<FlareSolved>(
+      url,
+      {
+        cmd: "request.get",
+        url: "https://jkt48.com/news/list?lang=id",
+        maxTimeout: 60000,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    const data = response.data.solution.response;
 
     return data; // Kembalikan HTML ke pemanggil
   } catch (error) {
@@ -135,13 +193,21 @@ export const parseNewsData = (html: string) => {
 };
 
 export const fetchNewsDetail = async (id: number) => {
-  const url = `https://jkt48.com/news/detail/id/${id}?lang=id`;
+  // const url = `https://jkt48.com/news/detail/id/${id}?lang=id`;
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
 
-  try {
-    const response = await axios.get(url);
-    return parseNewsDetail(response.data);
-  } catch (error) {
-    console.error("Error fetching news detail:", error);
-    return null;
-  }
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: `https://jkt48.com/news/detail/id/${id}?lang=id`,
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return parseNewsDetail(response.data.solution.response);
 };

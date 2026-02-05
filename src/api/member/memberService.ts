@@ -1,3 +1,5 @@
+import { env } from "@/common/utils/envConfig";
+import type { FlareSolved } from "@/common/utils/news";
 import axios from "axios";
 import * as cheerio from "cheerio";
 
@@ -19,14 +21,23 @@ interface MemberDetail {
 }
 
 export const fetchMemberData = async () => {
-  const url = "https://jkt48.com/member/list?lang=id";
+  // const url = "https://jkt48.com/member/list?lang=id";
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
 
-  try {
-    const response = await axios.get<string>(url);
-    return response.data;
-  } catch (error) {
-    return null;
-  }
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: "https://jkt48.com/member/list?lang=id",
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data.solution.response;
 };
 
 export const parseMemberData = (html: string) => {
@@ -91,12 +102,22 @@ export const parseMemberData = (html: string) => {
 };
 
 export const fetchMemberDataId = async (memberId: number) => {
-  try {
-    const response = await axios.get<string>(`https://jkt48.com/member/detail/id/${memberId}?lang=id`);
-    return response.data;
-  } catch (error) {
-    return null;
-  }
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
+
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: `https://jkt48.com/member/detail/id/${memberId}?lang=id`,
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data.solution.response;
 };
 
 export const parseMemberDataId = (html: string) => {
@@ -126,8 +147,21 @@ export const parseMemberDataId = (html: string) => {
 };
 
 export const fetchMemberSocialMediaId = async (id: number) => {
-  const response = await axios.get<string>(`https://jkt48.com/member/detail/id/${id}?lang=id`);
-  return response.data;
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: `https://jkt48.com/member/detail/id/${id}?lang=id`,
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data.solution.response;
 };
 
 export const parseMemberSocialMediaId = (html: string) => {

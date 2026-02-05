@@ -9,6 +9,7 @@ export const data = new SlashCommandBuilder()
   .setDescription("Menampilkan data ulang tahun member JKT48");
 
 export async function run({ interaction }: SlashCommandProps) {
+  await interaction.deferReply({ ephemeral: true });
   try {
     const response = await axios.get<Birthday[]>(`http://${env.HOST}:${env.PORT}/birthdays`);
     const birthdays = response.data;
@@ -34,12 +35,11 @@ export async function run({ interaction }: SlashCommandProps) {
       });
     });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     console.error("Error fetching birthdays:", error);
-    await interaction.reply({
+    await interaction.editReply({
       content: "Terjadi kesalahan saat mengambil data ulang tahun.",
-      ephemeral: true,
     });
   }
 }

@@ -1,5 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { env } from "./envConfig";
+import type { FlareSolved } from "./news";
 
 export interface Birthday {
   profileLink?: string | undefined;
@@ -9,12 +11,21 @@ export interface Birthday {
 }
 
 export const fetchBirthdayData = async () => {
-  try {
-    const response = await axios.get<string>("https://jkt48.com/");
-    return response.data;
-  } catch (error) {
-    return null;
-  }
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: "https://jkt48.com/",
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data.solution.response;
 };
 
 export const parseBirthdayData = (html: string) => {

@@ -8,15 +8,15 @@ import { env } from "@/common/utils/envConfig";
 export const data = new SlashCommandBuilder().setName("events").setDescription("Menampilkan jadwal event offair JKT48");
 
 export async function run({ interaction }: SlashCommandProps) {
+  await interaction.deferReply({ ephemeral: true });
   try {
     // Fetch data from the API
     const response = await axios.get<ParsedSchedule[]>(`http://${env.HOST}:${env.PORT}/schedule/section`);
     const eventSections = response.data;
 
     if (!eventSections || eventSections.length === 0) {
-      return interaction.reply({
+      return interaction.editReply({
         content: "Tidak ada event yang tersedia.",
-        ephemeral: true,
       });
     }
 
@@ -35,12 +35,11 @@ export async function run({ interaction }: SlashCommandProps) {
       });
     });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.editReply({ embeds: [embed] });
   } catch (error) {
-    console.error("Error fetching events:", error);
-    await interaction.reply({
+    console.error("Error fetching events:", JSON.stringify(error));
+    await interaction.editReply({
       content: "Terjadi kesalahan saat mengambil data event.",
-      ephemeral: true,
     });
   }
 }

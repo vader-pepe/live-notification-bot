@@ -16,4 +16,5 @@ export const env = cleanEnv(process.env, {
   BOT_TOKEN: str(),
   X_API_KEY: str(),
   DISCORD_WEBHOOK_URL: str(),
+  FLARE_SOLVER_BASE: str(),
 });

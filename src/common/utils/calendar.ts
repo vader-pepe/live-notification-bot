@@ -1,5 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
+import { env } from "./envConfig";
 
 export interface Schedule {
   showInfo: string;
@@ -19,6 +20,54 @@ export interface ParsedSchedule {
   hari: string;
   bulan: string;
   events: Event[];
+}
+
+export interface FlareSolved {
+  solution: Solution;
+  status: string;
+  message: string;
+  startTimestamp: number;
+  endTimestamp: number;
+  version: string;
+}
+
+export interface Solution {
+  url: string;
+  status: number;
+  headers: Headers;
+  response: string;
+  cookies: Cooky[];
+  userAgent: string;
+  turnstile_token: string;
+}
+
+export interface Cooky {
+  name: string;
+  value: string;
+  domain: string;
+  path: string;
+  expires: number;
+  size: number;
+  httpOnly: boolean;
+  secure: boolean;
+  session: boolean;
+  sameSite: string;
+}
+
+export interface Headers {
+  status: string;
+  date: string;
+  expires: string;
+  "cache-control": string;
+  "content-type": string;
+  "strict-transport-security": string;
+  p3p: string;
+  "content-encoding": string;
+  server: string;
+  "content-length": string;
+  "x-xss-protection": string;
+  "x-frame-options": string;
+  "set-cookie": string;
 }
 
 // Function to map month numbers to month abbreviations
@@ -46,13 +95,23 @@ const isValidShowInfo = (showInfo: string) => {
 };
 
 export const getSchedule = async () => {
-  const url = "https://jkt48.com/theater/schedule";
-  try {
-    const result = await axios.get<string>(url);
-    return result.data;
-  } catch (error) {
-    return null;
-  }
+  // const url = "https://jkt48.com/theater/schedule";
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
+
+  const result = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: "https://jkt48.com/theater/schedule",
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return result.data.solution.response;
 };
 
 export const parseScheduleData = (html: string) => {
@@ -95,11 +154,24 @@ export const parseScheduleData = (html: string) => {
 };
 
 export const fetchScheduleSectionData = async () => {
-  const url = "https://jkt48.com/";
+  // const url = "https://jkt48.com/";
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
 
   try {
-    const response = await axios.get<string>(url);
-    return response.data;
+    const response = await axios.post<FlareSolved>(
+      url,
+      {
+        cmd: "request.get",
+        url: "https://jkt48.com/",
+        maxTimeout: 60000,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    return response.data.solution.response;
   } catch (error) {
     return null;
   }

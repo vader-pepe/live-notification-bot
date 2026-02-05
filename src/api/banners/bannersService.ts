@@ -1,3 +1,6 @@
+import { env } from "@/common/utils/envConfig";
+import type { FlareSolved } from "@/common/utils/news";
+
 import axios from "axios";
 import * as cheerio from "cheerio";
 
@@ -7,14 +10,22 @@ interface Banner {
 }
 
 export const fetchBannerData = async () => {
-  const url = "https://jkt48.com/";
-
-  try {
-    const response = await axios.get<string>(url);
-    return response.data;
-  } catch (error) {
-    return null;
-  }
+  // const url = "https://jkt48.com/";
+  const url = `${env.FLARE_SOLVER_BASE}/v1`;
+  const response = await axios.post<FlareSolved>(
+    url,
+    {
+      cmd: "request.get",
+      url: "https://jkt48.com/",
+      maxTimeout: 60000,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+  return response.data.solution.response;
 };
 
 export const parseBannerData = (html: string) => {
