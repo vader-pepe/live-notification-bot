@@ -8,6 +8,8 @@ services:
       - TZ=Asia/Jakarta
     env_file:
       - .env
+    volumes:
+      - ${PWD}/data:/usr/src/app/data
     build:
       dockerfile: Dockerfile
 
